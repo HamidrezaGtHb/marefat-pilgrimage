@@ -83,15 +83,16 @@ export default function HomePage() {
             Marefat Pilgrimage
           </p>
           <h1 className="max-w-3xl text-balance font-display text-4xl tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
-            Premium Umrah &amp;{" "}
-            <span className="inline bg-gradient-to-r from-gold-soft to-gold bg-clip-text text-transparent">
-              Pilgrimage Tours
+          A Journey for Your Soul &amp;{" "}
+            <br/>
+            <span className="inline bg-gradient-to-r from-gold-soft sm:text-5xl to-gold bg-clip-text text-transparent">
+            Cared for by Hands You Can Trust
+
             </span>
+            <br/>
           </h1>
           <p className="mt-6 max-w-xl text-sm leading-relaxed text-charcoal/70 sm:text-base">
-            Curated journeys to Makkah, Madinah, Iraq, and Iran with
-            handpicked hotels, guided rituals, and discreet concierge support —
-            designed for those who value comfort, calm, and spiritual depth.
+          Your pilgrimage to Makkah, Madinah, Iraq, or Iran is the journey of a lifetime. We honor your sacred intent by providing a sanctuary of calm—pairing handpicked 5-star hotels with a supportive, human presence that handles every detail. Focus on your devotion; let us care for the rest.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <a
@@ -115,29 +116,26 @@ export default function HomePage() {
         <div className="mx-auto grid max-w-6xl gap-8 px-6 py-10 sm:grid-cols-3 sm:px-8 lg:px-12">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/60">
-              Licensed &amp; experienced
+            Faithful Guidance &amp; Expertise
             </p>
             <p className="mt-2 text-sm text-charcoal/80">
-              Registered religious travel agency with dedicated scholars and
-              on-ground support teams in every destination.
+            As a registered agency, we offer more than logistics. Our dedicated scholars and on-ground teams walk with you at every step, ensuring your rituals are performed with spiritual accuracy and peace of mind.
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/60">
-              Transparent &amp; clear
+              Integrity in Every Detail
             </p>
             <p className="mt-2 text-sm text-charcoal/80">
-              Clear itineraries, pricing, and inclusions — no last‑minute
-              surprises or hidden costs for you or your family.
+            We believe a sacred journey should be free from worldly worry. Our pricing and itineraries are fully transparent, allowing you and your family to travel with a clear heart, knowing every detail is honored as promised
             </p>
           </div>
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.18em] text-charcoal/60">
-              Human support
+             A Companion for Your Journey
             </p>
             <p className="mt-2 text-sm text-charcoal/80">
-              A dedicated concierge for your file, available via WhatsApp,
-              phone, and email before, during, and after your journey.
+            You are never alone on your path. Your personal Marefat companion is available around the clock via WhatsApp or phone—providing discreet, thoughtful care from the moment you begin your preparations until you return home.
             </p>
           </div>
         </div>

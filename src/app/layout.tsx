@@ -39,7 +39,7 @@ export default function RootLayout({
                     Marefat
                   </span>
                   <span className="text-[11px] text-charcoal/60">
-                    Pilgrimage Travel
+                    Pilgrimage
                   </span>
                 </div>
               </Link>
@@ -57,12 +57,12 @@ export default function RootLayout({
               </nav>
 
               <div className="flex items-center gap-3">
-                <a
+               {/* <a
                   href="/tours"
                   className="hidden rounded-full border border-charcoal/10 bg-ivory/80 px-4 py-2 text-xs font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold md:inline-flex"
                 >
                   View Tours
-                </a>
+                </a> */}
                 <a
                   href="/booking"
                   className="hidden rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 md:inline-flex"
