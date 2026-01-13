@@ -97,8 +97,8 @@ export default function RootLayout({
                   <p className="font-medium text-charcoal/80">
                     Direct assistance
                   </p>
-                  <p>Phone: +00 000 000 000</p>
-                  <p>Email: concierge@marefatpilgrimage.com</p>
+                  <p>Phone: +1 (950) 330-8904</p>
+                  <p>Email: info@marefatpilgrimage.com</p>
                 </div>
               </div>
               <div className="flex flex-wrap items-center justify-between gap-3 border-t border-charcoal/5 pt-4">

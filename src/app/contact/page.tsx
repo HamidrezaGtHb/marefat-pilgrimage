@@ -93,12 +93,12 @@ export default function ContactPage() {
                   Direct contacts
                 </h2>
                 <p className="mt-3 text-sm">
-                  Phone: <span className="font-medium">+00 000 000 000</span>
+                  Phone: <span className="font-medium">+1 (950) 330-8904</span>
                 </p>
                 <p className="mt-1 text-sm">
                   Email:{" "}
                   <span className="font-medium">
-                    concierge@marefatpilgrimage.com
+                    info@marefatpilgrimage.com
                   </span>
                 </p>
                 <Link
@@ -117,12 +117,14 @@ export default function ContactPage() {
 
               <Card variant="default" padding="md">
                 <h2 className="text-xs font-semibold uppercase tracking-[0.16em] text-charcoal/60">
-                  Office (by appointment)
+                  Office
                 </h2>
                 <p className="mt-3 text-sm">
-                  Placeholder address line 1
+                404 NW 68th Ave #511
                   <br />
-                  Placeholder city, country
+                  Plantation, FL 33317
+                  <br />
+                  United States
                 </p>
                 <p className="mt-2 text-xs text-charcoal/60">
                   Meetings are available by appointment only. Video consultation is
