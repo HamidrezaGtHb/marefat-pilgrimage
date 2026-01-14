@@ -1,12 +1,8 @@
-import type { Metadata } from "next";
-import Link from "next/link";
-import "./globals.css";
+"use client";
 
-export const metadata: Metadata = {
-  title: "Marefat Pilgrimage – Premium Umrah, Hajj & Ziyarat Tours",
-  description:
-    "Marefat Pilgrimage offers premium, small-group Umrah, Hajj, and Ziyarat tours with handpicked hotels, guided rituals, and end‑to‑end support.",
-};
+import Link from "next/link";
+import { useState } from "react";
+import "./globals.css";
 
 const navItems: { href: string; label: string }[] = [
   { href: "/", label: "Home" },
@@ -17,6 +13,111 @@ const navItems: { href: string; label: string }[] = [
   { href: "/contact", label: "Contact" },
 ];
 
+function HeaderContent() {
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  return (
+    <header className="sticky top-0 z-40 border-b border-charcoal/5 bg-ivory/80 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
+        <Link href="/" className="flex items-center gap-2">
+          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-gold/40 bg-gradient-to-br from-gold-soft/60 to-gold/90 shadow-soft">
+            <span className="text-sm font-semibold tracking-wide text-charcoal">
+              M
+            </span>
+          </div>
+          <div className="flex flex-col">
+            <span className="font-display text-sm tracking-[0.18em] uppercase text-charcoal">
+              Marefat
+            </span>
+            <span className="text-[11px] text-charcoal/60">
+              Pilgrimage
+            </span>
+          </div>
+        </Link>
+
+        <nav className="hidden items-center gap-7 text-sm text-charcoal/75 md:flex">
+          {navItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href as any}
+              className="transition hover:text-charcoal"
+            >
+              {item.label}
+            </Link>
+          ))}
+        </nav>
+
+        <div className="flex items-center gap-3">
+          <a
+            href="/booking"
+            className="hidden rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 md:inline-flex"
+          >
+            Book Consultation
+          </a>
+          <a
+            href="https://wa.me/0000000000"
+            className="hidden items-center justify-center rounded-full border border-charcoal/15 bg-ivory/90 px-3 py-2 text-[11px] font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold/80 sm:inline-flex md:px-3.5"
+          >
+            WhatsApp
+          </a>
+
+          {/* Mobile menu button */}
+          <button
+            type="button"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="inline-flex items-center justify-center rounded-lg p-2 text-charcoal transition hover:bg-charcoal/5 md:hidden"
+            aria-label="Toggle menu"
+          >
+            {mobileMenuOpen ? (
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            ) : (
+              <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile menu */}
+      {mobileMenuOpen && (
+        <div className="border-t border-charcoal/5 bg-ivory/95 backdrop-blur-xl md:hidden">
+          <nav className="mx-auto max-w-6xl px-6 py-4">
+            <div className="flex flex-col space-y-3">
+              {navItems.map((item) => (
+                <Link
+                  key={item.href}
+                  href={item.href as any}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="rounded-lg px-3 py-2 text-sm text-charcoal/75 transition hover:bg-charcoal/5 hover:text-charcoal"
+                >
+                  {item.label}
+                </Link>
+              ))}
+              <div className="border-t border-charcoal/5 pt-3">
+                <a
+                  href="/booking"
+                  className="flex w-full items-center justify-center rounded-full bg-charcoal px-4 py-2.5 text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
+                >
+                  Book Consultation
+                </a>
+                <a
+                  href="https://wa.me/0000000000"
+                  className="mt-2 flex w-full items-center justify-center rounded-full border border-charcoal/15 bg-ivory/90 px-4 py-2.5 text-sm font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold/80"
+                >
+                  WhatsApp
+                </a>
+              </div>
+            </div>
+          </nav>
+        </div>
+      )}
+    </header>
+  );
+}
+
 export default function RootLayout({
   children,
 }: {
@@ -24,60 +125,16 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className="scroll-smooth">
+      <head>
+        <title>Marefat Pilgrimage – Premium Umrah, Hajj & Ziyarat Tours</title>
+        <meta
+          name="description"
+          content="Marefat Pilgrimage offers premium, small-group Umrah, Hajj, and Ziyarat tours with handpicked hotels, guided rituals, and end‑to‑end support."
+        />
+      </head>
       <body className="bg-ivory text-charcoal antialiased">
         <div className="flex min-h-screen flex-col">
-          <header className="sticky top-0 z-40 border-b border-charcoal/5 bg-ivory/80 backdrop-blur-xl">
-            <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
-              <Link href="/" className="flex items-center gap-2">
-                <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-gold/40 bg-gradient-to-br from-gold-soft/60 to-gold/90 shadow-soft">
-                  <span className="text-sm font-semibold tracking-wide text-charcoal">
-                    M
-                  </span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="font-display text-sm tracking-[0.18em] uppercase text-charcoal">
-                    Marefat
-                  </span>
-                  <span className="text-[11px] text-charcoal/60">
-                    Pilgrimage
-                  </span>
-                </div>
-              </Link>
-
-              <nav className="hidden items-center gap-7 text-sm text-charcoal/75 md:flex">
-                {navItems.map((item) => (
-                  <Link
-                    key={item.href}
-                    href={item.href as any}
-                    className="transition hover:text-charcoal"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
-              </nav>
-
-              <div className="flex items-center gap-3">
-               {/* <a
-                  href="/tours"
-                  className="hidden rounded-full border border-charcoal/10 bg-ivory/80 px-4 py-2 text-xs font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold md:inline-flex"
-                >
-                  View Tours
-                </a> */}
-                <a
-                  href="/booking"
-                  className="hidden rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 md:inline-flex"
-                >
-                  Book Consultation
-                </a>
-                <a
-                  href="https://wa.me/0000000000"
-                  className="inline-flex items-center justify-center rounded-full border border-charcoal/15 bg-ivory/90 px-3 py-2 text-[11px] font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold/80 md:px-3.5"
-                >
-                  WhatsApp
-                </a>
-              </div>
-            </div>
-          </header>
+          <HeaderContent />
 
           <main className="flex-1">{children}</main>
 
