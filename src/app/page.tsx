@@ -75,24 +75,40 @@ export default function HomePage() {
     <main className="min-h-screen">
       {/* Hero */}
       <section className="relative overflow-hidden">
+        {/* Background gradient overlay */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute inset-y-0 right-[-20%] w-1/2 bg-[radial-gradient(circle_at_top,_rgba(199,165,106,0.18),_transparent)]" />
         </div>
-        <div className="mx-auto flex min-h-[70vh] max-w-6xl flex-col items-start justify-center px-6 py-16 sm:px-8 lg:px-12">
+
+        {/* Background image - Desktop only */}
+        <div className="absolute inset-y-0 right-0 hidden w-1/2 lg:block">
+          <div className="relative h-full w-full">
+            <img
+              src="/Gemini_Generated_Image_wjtkogwjtkogwjtk.png"
+              alt=""
+              className="h-full w-full object-cover object-left"
+            />
+            {/* Gradient overlay to blend with background */}
+            <div className="absolute inset-0 bg-gradient-to-r from-ivory via-ivory/80 to-transparent" />
+            <div className="absolute inset-0 bg-gradient-to-t from-ivory/60 via-transparent to-ivory/60" />
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="relative mx-auto flex min-h-[70vh] max-w-6xl flex-col items-start justify-center px-6 py-16 sm:px-8 lg:px-12">
           <p className="mb-4 text-xs font-semibold uppercase tracking-[0.2em] text-gold">
             Marefat Pilgrimage
           </p>
-          <h1 className="max-w-3xl text-balance font-display text-4xl tracking-tight text-charcoal sm:text-5xl lg:text-6xl">
-          A Journey for Your Soul &amp;{" "}
-            <br/>
-            <span className="inline bg-gradient-to-r from-gold-soft sm:text-5xl to-gold bg-clip-text text-transparent">
-            Cared for by Hands You Can Trust
-
+          <h1 className="max-w-3xl text-balance font-display text-4xl tracking-tight text-charcoal sm:text-5xl lg:max-w-2xl lg:text-6xl">
+            A Journey for Your Soul &amp;{" "}
+            <br />
+            <span className="inline bg-gradient-to-r from-gold-soft to-gold bg-clip-text text-transparent sm:text-5xl">
+              Cared for by Hands You Can Trust
             </span>
-            <br/>
+            <br />
           </h1>
-          <p className="mt-6 max-w-xl text-sm leading-relaxed text-charcoal/70 sm:text-base">
-          Your pilgrimage to Makkah, Madinah, Iraq, or Iran is the journey of a lifetime. We honor your sacred intent by providing a sanctuary of calm—pairing handpicked 5-star hotels with a supportive, human presence that handles every detail. Focus on your devotion; let us care for the rest.
+          <p className="mt-6 max-w-xl text-sm leading-relaxed text-charcoal/70 sm:text-base lg:max-w-lg">
+            Your pilgrimage to Makkah, Madinah, Iraq, or Iran is the journey of a lifetime. We honor your sacred intent by providing a sanctuary of calm—pairing handpicked 5-star hotels with a supportive, human presence that handles every detail. Focus on your devotion; let us care for the rest.
           </p>
           <div className="mt-8 flex flex-wrap gap-4">
             <a
