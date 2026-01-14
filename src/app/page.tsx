@@ -4,30 +4,47 @@ const featuredTours = [
     title: "Signature Ramadan Umrah",
     destination: "Makkah & Madinah",
     type: "Umrah",
-    duration: "10 days",
-    date: "15 March 2026",
-    priceFrom: "€3,250",
-    availability: "Limited seats",
+    startDate: "2026-03-15",
+    endDate: "2026-03-25",
+    durationDays: 10,
+    priceFrom: 3250,
+    hotelStars: 5,
+    flightIncluded: true,
+    meals: "Breakfast & Dinner",
+    packageLevel: "Premium",
   },
   {
     slug: "executive-hajj-program",
     title: "Executive Hajj Program",
     destination: "Makkah, Mina, Arafat",
     type: "Hajj",
-    duration: "18 days",
-    date: "Hajj 1447",
-    priceFrom: "On request",
-    availability: "By application",
+    startDate: "2026-06-01",
+    endDate: "2026-06-19",
+    durationDays: 18,
+    priceFrom: 0,
+    hotelStars: 5,
+    flightIncluded: true,
+    meals: "Full Board",
+    packageLevel: "Premium",
   },
   {
     slug: "karbala-najaf-retreat",
     title: "Karbala & Najaf Retreat",
     destination: "Karbala & Najaf",
     type: "Ziyarat",
-    duration: "7 days",
-    date: "Monthly departures",
-    priceFrom: "€1,650",
-    availability: "Available",
+    startDate: "2026-02-10",
+    endDate: "2026-02-17",
+    durationDays: 7,
+    priceFrom: 1650,
+    hotelStars: 4,
+    flightIncluded: false,
+    meals: "Breakfast only",
+    packageLevel: "Economy",
+    earlyBirdDiscount: {
+      discountedPrice: 1450,
+      originalPrice: 1650,
+      deadline: "2026-01-25",
+    },
   },
 ];
 
@@ -177,28 +194,105 @@ export default function HomePage() {
               View all tours
             </a>
           </div>
-          <div className="mt-8 grid gap-6 md:grid-cols-3">
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {featuredTours.map((tour) => (
               <a
                 key={tour.slug}
                 href={`/tours/${tour.slug}`}
-                className="group flex flex-col rounded-2xl border border-charcoal/5 bg-ivory/80 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
+                className="group flex flex-col rounded-2xl border border-charcoal/5 bg-ivory/80 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
               >
-                <div className="mb-4 h-32 rounded-xl bg-gradient-to-tr from-charcoal/70 via-charcoal/40 to-gold-soft/60 opacity-80 transition group-hover:opacity-100" />
-                <p className="text-[11px] font-medium uppercase tracking-[0.16em] text-charcoal/60">
-                  {tour.type} • {tour.destination}
-                </p>
-                <h3 className="mt-2 text-sm font-semibold text-charcoal sm:text-base">
-                  {tour.title}
-                </h3>
-                <p className="mt-2 text-xs text-charcoal/65">
-                  {tour.duration} • {tour.date}
-                </p>
-                <div className="mt-4 flex items-center justify-between text-xs">
-                  <span className="font-medium text-charcoal">
-                    From {tour.priceFrom}
-                  </span>
-                  <span className="text-[11px] text-gold">{tour.availability}</span>
+                {/* Image */}
+                <div className="p-5 pb-0">
+                  <div className="relative h-48 overflow-hidden rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/50 to-gold-soft/70">
+                    <div className="absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100" />
+                  </div>
+                </div>
+
+                {/* Content */}
+                <div className="flex flex-1 flex-col p-5 pt-4">
+                  {/* Badges */}
+                  <div className="flex flex-wrap items-center gap-2 mb-3">
+                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                      tour.packageLevel === "Premium"
+                        ? "bg-gold/10 text-gold-dark"
+                        : "bg-charcoal/10 text-charcoal/70"
+                    }`}>
+                      {tour.packageLevel}
+                    </span>
+                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-charcoal/50">
+                      {tour.type}
+                    </span>
+                  </div>
+
+                  {/* Title */}
+                  <h3 className="mb-2 text-base font-semibold leading-snug text-charcoal transition-colors group-hover:text-gold-dark">
+                    {tour.title}
+                  </h3>
+
+                  {/* Date & Duration */}
+                  <p className="mb-3 text-xs leading-relaxed text-charcoal/60">
+                    {new Date(tour.startDate).toLocaleDateString("en-GB", {
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })} • {tour.durationDays} days
+                  </p>
+
+                  {/* Details */}
+                  <div className="mb-4 flex-1 space-y-2 text-xs leading-relaxed text-charcoal/65">
+                    <div className="flex items-center gap-2">
+                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-gold/70" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
+                      </svg>
+                      <span>{tour.hotelStars}★ Hotel • {tour.meals}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-gold/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                      </svg>
+                      <span>{tour.flightIncluded ? "Flight included" : "Flight not included"}</span>
+                    </div>
+                  </div>
+
+                  {/* Price & CTA */}
+                  <div className="flex items-end justify-between border-t border-charcoal/5 pt-4">
+                    <div>
+                      {tour.earlyBirdDiscount && new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
+                        <div>
+                          <p className="text-[9px] font-bold uppercase tracking-wider text-gold">
+                            Early Bird Offer
+                          </p>
+                          <div className="mt-0.5 flex items-baseline gap-2">
+                            <span className="text-xs text-charcoal/40 line-through">
+                              €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
+                            </span>
+                            <span className="text-lg font-bold text-charcoal">
+                              €{tour.earlyBirdDiscount.discountedPrice.toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="mt-0.5 text-[9px] text-charcoal/50">
+                            Until {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                            })}
+                          </p>
+                        </div>
+                      ) : (
+                        <div>
+                          <p className="text-[10px] font-medium uppercase tracking-wider text-charcoal/50">From</p>
+                          <p className="mt-0.5 text-lg font-bold text-charcoal">
+                            {tour.priceFrom > 0 ? `€${tour.priceFrom.toLocaleString()}` : "On request"}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center gap-1 text-xs font-medium text-gold transition-colors group-hover:text-gold-dark">
+                      <span>Details</span>
+                      <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                      </svg>
+                    </div>
+                  </div>
                 </div>
               </a>
             ))}
