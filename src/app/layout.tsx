@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import "./globals.css";
 
 const navItems: { href: string; label: string }[] = [
@@ -15,18 +15,53 @@ const navItems: { href: string; label: string }[] = [
 
 function HeaderContent() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  // Close menu when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [mobileMenuOpen]);
+
+  // Close menu when pressing Escape key
+  useEffect(() => {
+    const handleEscape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    if (mobileMenuOpen) {
+      document.addEventListener("keydown", handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, [mobileMenuOpen]);
 
   return (
-    <header className="sticky top-0 z-40 border-b border-charcoal/5 bg-ivory/80 backdrop-blur-xl">
+    <header ref={menuRef} className="sticky top-0 z-40 border-b border-charcoal/5 bg-ivory/80 backdrop-blur-xl">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
-        <Link href="/" className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-2xl border border-gold/40 bg-gradient-to-br from-gold-soft/60 to-gold/90 shadow-soft">
-            <span className="text-sm font-semibold tracking-wide text-charcoal">
-              M
-            </span>
-          </div>
+        <Link href="/" className="flex items-center gap-2.5">
+          <img
+            src="/logo.svg"
+            alt="Marefat Pilgrimage"
+            className="h-10 w-10 sm:h-11 sm:w-11"
+          />
           <div className="flex flex-col">
-            <span className="font-display text-sm tracking-[0.18em] uppercase text-charcoal">
+            <span className="font-display h-4 text-sm tracking-[0.18em] uppercase text-charcoal">
               Marefat
             </span>
             <span className="text-[11px] text-charcoal/60">
@@ -131,6 +166,9 @@ export default function RootLayout({
           name="description"
           content="Marefat Pilgrimage offers premium, small-group Umrah, Hajj, and Ziyarat tours with handpicked hotels, guided rituals, and end‑to‑end support."
         />
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+        <link rel="icon" href="/logo.png" type="image/png" />
+        <link rel="apple-touch-icon" href="/logo.png" />
       </head>
       <body className="bg-ivory text-charcoal antialiased">
         <div className="flex min-h-screen flex-col">
