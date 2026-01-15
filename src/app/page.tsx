@@ -256,14 +256,17 @@ export default function HomePage() {
                   </div>
 
                   {/* Price & CTA */}
-                  <div className="flex items-center justify-between gap-3 pt-3">
+                  <div className="flex items-end justify-between gap-3 pt-3">
                     <div>
                       {tour.earlyBirdDiscount && new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
-                        <div className="space-y-1">
+                        <div>
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-gold">
-                            Early Bird
+                            Early Bird • Until {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString("en-GB", {
+                              day: "numeric",
+                              month: "short",
+                            })}
                           </p>
-                          <div className="flex items-baseline gap-2">
+                          <div className="mt-1 flex items-baseline gap-2">
                             <span className="text-xs text-charcoal/50 line-through">
                               €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
                             </span>
