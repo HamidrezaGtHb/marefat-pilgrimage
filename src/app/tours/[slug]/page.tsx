@@ -206,12 +206,12 @@ export default function TourDetailPage({ params }: Props) {
             <p className="font-medium text-charcoal">Ready to reserve?</p>
             <p>Complete your details in a few guided steps.</p>
           </div>
-          <a
-            href={`/booking?tour=${encodeURIComponent(tour.slug)}`}
+          <Link
+            href={`/tours/${tour.slug}/book`}
             className="inline-flex items-center justify-center rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft"
           >
             Book now
-          </a>
+          </Link>
         </div>
       </div>
 
