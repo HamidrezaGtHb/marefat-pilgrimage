@@ -569,11 +569,12 @@ export default function ToursPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 sm:grid-cols-2">
+            <div className="grid gap-6 lg:grid-cols-2">
               {filteredTours.map((tour) => (
-                <article
+                <Link
                   key={tour.slug}
-                  className="group flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
+                  href={`/tours/${tour.slug}`}
+                  className="group flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft hover:border-gold/20 cursor-pointer"
                 >
                   {/* Image */}
                   <div className="h-40 w-full flex-shrink-0 rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/40 to-gold-soft/70 opacity-80 transition group-hover:opacity-100" />
@@ -589,13 +590,8 @@ export default function ToursPage() {
                     </div>
 
                     {/* Title */}
-                    <h2 className="text-sm font-semibold text-charcoal sm:text-base">
-                      <Link
-                        href={`/tours/${tour.slug}`}
-                        className="hover:text-gold transition"
-                      >
-                        {tour.title}
-                      </Link>
+                    <h2 className="text-sm font-semibold text-charcoal transition group-hover:text-gold sm:text-base">
+                      {tour.title}
                     </h2>
 
                     {/* Date */}
@@ -620,14 +616,14 @@ export default function ToursPage() {
                     </div>
 
                     {/* Price & CTA */}
-                    <div className="flex items-end justify-between gap-3 pt-3 sm:flex-col sm:items-end sm:pt-0 lg:flex-row lg:items-end lg:pt-3">
-                      <div className="w-full sm:text-right lg:text-left">
+                    <div className="flex items-center justify-between gap-3 pt-3">
+                      <div>
                         {tour.earlyBirdDiscount && new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
                           <div className="space-y-1">
                             <p className="text-[10px] font-semibold uppercase tracking-wide text-gold">
-                              Early Bird Offer
+                              Early Bird
                             </p>
-                            <div className="flex items-baseline gap-2 sm:justify-end lg:justify-start">
+                            <div className="flex items-baseline gap-2">
                               <span className="text-xs text-charcoal/50 line-through">
                                 €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
                               </span>
@@ -635,12 +631,6 @@ export default function ToursPage() {
                                 €{tour.earlyBirdDiscount.discountedPrice.toLocaleString()}
                               </span>
                             </div>
-                            <p className="text-[10px] text-charcoal/60">
-                              Until {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString("en-GB", {
-                                day: "numeric",
-                                month: "short",
-                              })}
-                            </p>
                           </div>
                         ) : (
                           <div>
@@ -651,15 +641,15 @@ export default function ToursPage() {
                           </div>
                         )}
                       </div>
-                      <Link
-                        href={`/tours/${tour.slug}`}
-                        className="inline-flex items-center justify-center rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 sm:w-full lg:w-auto"
-                      >
-                        Details
-                      </Link>
+                      <div className="flex items-center gap-2 text-xs font-medium text-charcoal/70 transition group-hover:text-gold">
+                        <span>View</span>
+                        <svg className="h-4 w-4 transition group-hover:translate-x-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+                        </svg>
+                      </div>
                     </div>
                   </div>
-                </article>
+                </Link>
               ))}
 
               {filteredTours.length === 0 && (
