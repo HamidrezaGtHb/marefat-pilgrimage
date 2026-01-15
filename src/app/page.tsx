@@ -194,43 +194,52 @@ export default function HomePage() {
               View all tours
             </a>
           </div>
-          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {featuredTours.map((tour) => (
-              <a
+              <article
                 key={tour.slug}
-                href={`/tours/${tour.slug}`}
-                className="group flex flex-col rounded-2xl border border-charcoal/5 bg-ivory/80 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
+                className="group flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
               >
                 {/* Image */}
-                <div className="p-5 pb-0">
-                  <div className="relative h-48 overflow-hidden rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/50 to-gold-soft/70">
-                    <div className="absolute inset-0 opacity-80 transition-opacity group-hover:opacity-100" />
-                  </div>
-                </div>
+                <div className="h-40 w-full flex-shrink-0 rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/40 to-gold-soft/70 opacity-80 transition group-hover:opacity-100" />
 
                 {/* Content */}
-                <div className="flex flex-1 flex-col p-5 pt-4">
+                <div className="flex flex-1 flex-col space-y-2">
                   {/* Badges */}
-                  <div className="flex flex-wrap items-center gap-2 mb-3">
-                    <span className={`inline-flex rounded-full px-2.5 py-1 text-[10px] font-semibold uppercase tracking-wider ${
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] ${
                       tour.packageLevel === "Premium"
-                        ? "bg-gold/10 text-gold-dark"
-                        : "bg-charcoal/10 text-charcoal/70"
+                        ? "bg-gradient-to-r from-gold/20 to-gold-soft/20 text-gold-dark border border-gold/30 shadow-sm"
+                        : "bg-gradient-to-r from-charcoal/5 to-charcoal/10 text-charcoal/80 border border-charcoal/15 shadow-sm"
                     }`}>
+                      {tour.packageLevel === "Premium" ? (
+                        <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20">
+                          <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                        </svg>
+                      ) : (
+                        <svg className="h-3 w-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      )}
                       {tour.packageLevel}
                     </span>
-                    <span className="text-[10px] font-semibold uppercase tracking-[0.12em] text-charcoal/50">
+                    <span className="text-[11px] uppercase tracking-[0.16em] text-charcoal/60">
                       {tour.type}
                     </span>
                   </div>
 
                   {/* Title */}
-                  <h3 className="mb-2 text-base font-semibold leading-snug text-charcoal transition-colors group-hover:text-gold-dark">
-                    {tour.title}
-                  </h3>
+                  <h2 className="text-sm font-semibold text-charcoal sm:text-base">
+                    <a
+                      href={`/tours/${tour.slug}`}
+                      className="hover:text-gold transition"
+                    >
+                      {tour.title}
+                    </a>
+                  </h2>
 
-                  {/* Date & Duration */}
-                  <p className="mb-3 text-xs leading-relaxed text-charcoal/60">
+                  {/* Date */}
+                  <p className="text-xs text-charcoal/70">
                     {new Date(tour.startDate).toLocaleDateString("en-GB", {
                       day: "numeric",
                       month: "short",
@@ -239,38 +248,34 @@ export default function HomePage() {
                   </p>
 
                   {/* Details */}
-                  <div className="mb-4 flex-1 space-y-2 text-xs leading-relaxed text-charcoal/65">
-                    <div className="flex items-center gap-2">
-                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-gold/70" fill="currentColor" viewBox="0 0 20 20">
-                        <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z" />
-                      </svg>
-                      <span>{tour.hotelStars}★ Hotel • {tour.meals}</span>
+                  <div className="space-y-1.5">
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-charcoal/70">
+                      <span>{tour.hotelStars}★ hotel</span>
+                      <span>•</span>
+                      <span>{tour.flightIncluded ? "✓ Flight included" : "✗ Flight not included"}</span>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <svg className="h-3.5 w-3.5 flex-shrink-0 text-gold/70" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
-                      <span>{tour.flightIncluded ? "Flight included" : "Flight not included"}</span>
+                    <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-charcoal/70">
+                      <span>Meals: {tour.meals}</span>
                     </div>
                   </div>
 
                   {/* Price & CTA */}
-                  <div className="flex items-end justify-between border-t border-charcoal/5 pt-4">
-                    <div>
+                  <div className="flex items-end justify-between gap-3 pt-3 sm:flex-col sm:items-end sm:pt-0 lg:flex-row lg:items-end lg:pt-3">
+                    <div className="w-full sm:text-right lg:text-left">
                       {tour.earlyBirdDiscount && new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
-                        <div>
-                          <p className="text-[9px] font-bold uppercase tracking-wider text-gold">
+                        <div className="space-y-1">
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gold">
                             Early Bird Offer
                           </p>
-                          <div className="mt-0.5 flex items-baseline gap-2">
-                            <span className="text-xs text-charcoal/40 line-through">
+                          <div className="flex items-baseline gap-2 sm:justify-end lg:justify-start">
+                            <span className="text-xs text-charcoal/50 line-through">
                               €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
                             </span>
                             <span className="text-lg font-bold text-charcoal">
                               €{tour.earlyBirdDiscount.discountedPrice.toLocaleString()}
                             </span>
                           </div>
-                          <p className="mt-0.5 text-[9px] text-charcoal/50">
+                          <p className="text-[10px] text-charcoal/60">
                             Until {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString("en-GB", {
                               day: "numeric",
                               month: "short",
@@ -279,22 +284,22 @@ export default function HomePage() {
                         </div>
                       ) : (
                         <div>
-                          <p className="text-[10px] font-medium uppercase tracking-wider text-charcoal/50">From</p>
-                          <p className="mt-0.5 text-lg font-bold text-charcoal">
+                          <p className="text-xs text-charcoal/60">From</p>
+                          <p className="text-lg font-semibold text-charcoal">
                             {tour.priceFrom > 0 ? `€${tour.priceFrom.toLocaleString()}` : "On request"}
                           </p>
                         </div>
                       )}
                     </div>
-                    <div className="flex items-center gap-1 text-xs font-medium text-gold transition-colors group-hover:text-gold-dark">
-                      <span>Details</span>
-                      <svg className="h-4 w-4 transition-transform group-hover:translate-x-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
-                      </svg>
-                    </div>
+                    <a
+                      href={`/tours/${tour.slug}`}
+                      className="inline-flex items-center justify-center rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 sm:w-full lg:w-auto"
+                    >
+                      Details
+                    </a>
                   </div>
                 </div>
-              </a>
+              </article>
             ))}
           </div>
         </div>

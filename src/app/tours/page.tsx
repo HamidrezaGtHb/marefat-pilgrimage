@@ -150,8 +150,7 @@ const TOURS: Tour[] = [
 type Sorting =
   | "price-asc"
   | "date-soonest"
-  | "duration"
-  | "popularity";
+  | "duration";
 
 export default function ToursPage() {
   const [destination, setDestination] = useState<string>("all");
@@ -223,8 +222,6 @@ export default function ToursPage() {
           );
         case "duration":
           return a.durationDays - b.durationDays;
-        case "popularity":
-          return b.popularityScore - a.popularityScore;
         default:
           return 0;
       }
@@ -260,8 +257,8 @@ export default function ToursPage() {
             className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-xs text-charcoal transition focus:outline-none focus:ring-2 focus:ring-gold/70 focus:ring-offset-2 focus:ring-offset-ivory"
           >
             <option value="all">All Types</option>
-            <option value="Umrah">Umrah</option>
             <option value="Hajj">Hajj</option>
+            <option value="Umrah">Umrah</option>
             <option value="Ziyarat">Ziyarat</option>
             <option value="Combo">Combination</option>
           </select>
@@ -276,9 +273,9 @@ export default function ToursPage() {
             className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-xs text-charcoal transition focus:outline-none focus:ring-2 focus:ring-gold/70 focus:ring-offset-2 focus:ring-offset-ivory"
           >
             <option value="all">All</option>
-            <option value="Makkah/Madinah">Makkah &amp; Madinah</option>
-            <option value="Iraq">Karbala, Najaf, Baghdad</option>
-            <option value="Iran">Mashhad, Iran</option>
+            <option value="Makkah/Madinah">Saudi Arabia</option>
+            <option value="Iraq">Iraq</option>
+            <option value="Iran">Iran</option>
             <option value="Multi">Combination</option>
           </select>
         </div>
@@ -346,7 +343,7 @@ export default function ToursPage() {
           Hotel Rating
         </label>
         <div className="flex flex-wrap gap-2">
-          {[3, 4, 5].map((stars) => (
+          {[4, 5].map((stars) => (
             <button
               key={stars}
               type="button"
@@ -491,7 +488,6 @@ export default function ToursPage() {
             <option value="date-soonest">Soonest departure</option>
             <option value="price-asc">Price (low to high)</option>
             <option value="duration">Duration</option>
-            <option value="popularity">Popularity</option>
           </select>
         </div>
 
@@ -542,7 +538,6 @@ export default function ToursPage() {
                       <option value="date-soonest">Soonest departure</option>
                       <option value="price-asc">Price (low to high)</option>
                       <option value="duration">Duration</option>
-                      <option value="popularity">Popularity</option>
                     </select>
                   </div>
                   <div className="max-h-[55vh] space-y-4 overflow-y-auto pb-3">
@@ -570,25 +565,30 @@ export default function ToursPage() {
                   <option value="date-soonest">Soonest departure</option>
                   <option value="price-asc">Price (low to high)</option>
                   <option value="duration">Duration</option>
-                  <option value="popularity">Popularity</option>
                 </select>
               </div>
             </div>
 
-            <div className="space-y-4">
+            <div className="grid gap-6 sm:grid-cols-2">
               {filteredTours.map((tour) => (
                 <article
                   key={tour.slug}
-                  className="group flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft sm:flex-row"
+                  className="group flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5 transition hover:-translate-y-1 hover:shadow-soft"
                 >
-                  <div className="h-32 flex-1 rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/40 to-gold-soft/70 opacity-80 transition group-hover:opacity-100 sm:h-32" />
-                  <div className="flex-[2] space-y-2">
+                  {/* Image */}
+                  <div className="h-40 w-full flex-shrink-0 rounded-xl bg-gradient-to-tr from-charcoal/80 via-charcoal/40 to-gold-soft/70 opacity-80 transition group-hover:opacity-100" />
+
+                  {/* Content */}
+                  <div className="flex flex-1 flex-col space-y-2">
+                    {/* Badges */}
                     <div className="flex flex-wrap items-center gap-2">
                       <PackageBadge level={tour.packageLevel} />
                       <span className="text-[11px] uppercase tracking-[0.16em] text-charcoal/60">
                         {tour.type}
                       </span>
                     </div>
+
+                    {/* Title */}
                     <h2 className="text-sm font-semibold text-charcoal sm:text-base">
                       <Link
                         href={`/tours/${tour.slug}`}
@@ -597,86 +597,67 @@ export default function ToursPage() {
                         {tour.title}
                       </Link>
                     </h2>
+
+                    {/* Date */}
                     <p className="text-xs text-charcoal/70">
                       {new Date(tour.startDate).toLocaleDateString("en-GB", {
                         day: "numeric",
                         month: "short",
                         year: "numeric",
-                      })}{" "}
-                      -{" "}
-                      {new Date(tour.endDate).toLocaleDateString("en-GB", {
-                        day: "numeric",
-                        month: "short",
-                        year: "numeric",
-                      })}{" "}
-                      • {tour.durationDays} days
+                      })} • {tour.durationDays} days
                     </p>
+
+                    {/* Details */}
                     <div className="space-y-1.5">
                       <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-charcoal/70">
                         <span>{tour.hotelStars}★ hotel</span>
                         <span>•</span>
-                        <span>
-                          {tour.flightIncluded ? "✓ Flight included" : "✗ Flight not included"}
-                        </span>
+                        <span>{tour.flightIncluded ? "✓ Flight included" : "✗ Flight not included"}</span>
                       </div>
                       <div className="flex flex-wrap gap-x-2 gap-y-1 text-[11px] text-charcoal/70">
                         <span>Meals: {tour.meals}</span>
-                        <span>•</span>
-                        <span>
-                          {tour.transfer ? "✓ Airport Transfer" : "✗ No Transfer"}
-                        </span>
                       </div>
-                      {tour.spiritualGuide && (
-                        <div className="text-[11px] font-medium text-gold">
-                          ✓ Spiritual guide included
-                        </div>
-                      )}
                     </div>
-                  </div>
-                  <div className="flex flex-col items-end justify-between gap-3 text-right sm:w-40">
-                    <div className="w-full">
-                      {tour.earlyBirdDiscount &&
-                      new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
-                        <div className="space-y-1">
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-gold">
-                            Early Bird Offer
-                          </p>
-                          <div className="flex items-baseline justify-end gap-2">
-                            <span className="text-xs text-charcoal/50 line-through">
-                              €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
-                            </span>
-                            <span className="text-lg font-bold text-charcoal">
-                              €{tour.earlyBirdDiscount.discountedPrice.toLocaleString()}
-                            </span>
-                          </div>
-                          <p className="text-[10px] text-charcoal/60">
-                            Until{" "}
-                            {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString(
-                              "en-GB",
-                              {
+
+                    {/* Price & CTA */}
+                    <div className="flex items-end justify-between gap-3 pt-3 sm:flex-col sm:items-end sm:pt-0 lg:flex-row lg:items-end lg:pt-3">
+                      <div className="w-full sm:text-right lg:text-left">
+                        {tour.earlyBirdDiscount && new Date() <= new Date(tour.earlyBirdDiscount.deadline) ? (
+                          <div className="space-y-1">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-gold">
+                              Early Bird Offer
+                            </p>
+                            <div className="flex items-baseline gap-2 sm:justify-end lg:justify-start">
+                              <span className="text-xs text-charcoal/50 line-through">
+                                €{tour.earlyBirdDiscount.originalPrice.toLocaleString()}
+                              </span>
+                              <span className="text-lg font-bold text-charcoal">
+                                €{tour.earlyBirdDiscount.discountedPrice.toLocaleString()}
+                              </span>
+                            </div>
+                            <p className="text-[10px] text-charcoal/60">
+                              Until {new Date(tour.earlyBirdDiscount.deadline).toLocaleDateString("en-GB", {
                                 day: "numeric",
                                 month: "short",
-                              }
-                            )}
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-xs text-charcoal/60">From</p>
-                          <p className="text-lg font-semibold text-charcoal">
-                            {tour.priceFrom > 0
-                              ? `€${tour.priceFrom.toLocaleString()}`
-                              : "On request"}
-                          </p>
-                        </div>
-                      )}
+                              })}
+                            </p>
+                          </div>
+                        ) : (
+                          <div>
+                            <p className="text-xs text-charcoal/60">From</p>
+                            <p className="text-lg font-semibold text-charcoal">
+                              {tour.priceFrom > 0 ? `€${tour.priceFrom.toLocaleString()}` : "On request"}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      <Link
+                        href={`/tours/${tour.slug}`}
+                        className="inline-flex items-center justify-center rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 sm:w-full lg:w-auto"
+                      >
+                        Details
+                      </Link>
                     </div>
-                    <Link
-                      href={`/tours/${tour.slug}`}
-                      className="inline-flex items-center justify-center rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
-                    >
-                      Details
-                    </Link>
                   </div>
                 </article>
               ))}
