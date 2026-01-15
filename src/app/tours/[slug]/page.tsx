@@ -164,12 +164,12 @@ export default function TourDetailPage({ params }: Props) {
               <p>• Option to pay online or via bank transfer</p>
               <p>• Confirmation email with full summary</p>
             </div>
-            <a
-              href={`/booking?tour=${encodeURIComponent(tour.slug)}`}
+            <Link
+              href={`/tours/${tour.slug}/book`}
               className="mt-3 inline-flex items-center justify-center rounded-full bg-charcoal px-6 py-2.5 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
             >
               Book this tour
-            </a>
+            </Link>
             <a
               href="https://wa.me/0000000000"
               className="inline-flex items-center justify-center rounded-full border border-charcoal/15 bg-ivory/80 px-6 py-2.5 text-xs font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold"
