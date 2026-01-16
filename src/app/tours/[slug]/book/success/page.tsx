@@ -8,6 +8,12 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const bookingRef = searchParams.get("ref") || "MAR-XXXXX";
 
+  const handleDownloadPDF = () => {
+    // In production, this would generate and download a real PDF
+    // For now, we'll create a simple alert
+    alert(`PDF download for booking ${bookingRef} will be generated. This feature will be implemented with a backend service.`);
+  };
+
   return (
     <main className="min-h-screen bg-ivory">
       <section className="mx-auto max-w-3xl px-6 py-16 sm:px-8 lg:px-12">
@@ -46,52 +52,79 @@ function SuccessContent() {
               {bookingRef}
             </p>
             <p className="mt-3 text-xs leading-relaxed text-charcoal/70">
-              Please save this reference number for future correspondence. We've sent a detailed confirmation to your email.
+              Please save this reference number for future correspondence.
             </p>
+
+            {/* Download PDF Button */}
+            <button
+              onClick={handleDownloadPDF}
+              className="mt-4 inline-flex w-full items-center justify-center gap-2 rounded-full border border-charcoal/15 bg-ivory px-6 py-2.5 text-sm font-medium text-charcoal shadow-sm transition hover:border-charcoal/30 hover:shadow-md"
+            >
+              <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              </svg>
+              Download Confirmation PDF
+            </button>
           </div>
 
-          {/* Next Steps */}
-          <div className="mt-10 grid gap-4 text-left sm:grid-cols-3">
+          {/* What's Next */}
+          <div className="mt-10 space-y-4 text-left">
+            <h2 className="text-center text-base font-semibold text-charcoal">
+              What Happens Next?
+            </h2>
+
             <div className="rounded-xl border border-charcoal/5 bg-ivory/90 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
-                <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">
+                  <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-charcoal">
+                    1. Email Confirmation
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-charcoal/70">
+                    A detailed confirmation email with your booking information, payment instructions, and bank details has been sent to your inbox. Please check your spam folder if you don't see it within a few minutes.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-sm font-semibold text-charcoal">
-                Confirmation Email
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-charcoal/70">
-                Sent to your inbox with full booking details
-              </p>
             </div>
 
             <div className="rounded-xl border border-charcoal/5 bg-ivory/90 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
-                <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">
+                  <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-charcoal">
+                    2. Payment Transfer
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-charcoal/70">
+                    Please transfer the 30% deposit to the bank account provided in your email. Use your booking reference ({bookingRef}) as the payment reference.
+                  </p>
+                </div>
               </div>
-              <h3 className="text-sm font-semibold text-charcoal">
-                Next Steps
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-charcoal/70">
-                Check your email for payment and document instructions
-              </p>
             </div>
 
             <div className="rounded-xl border border-charcoal/5 bg-ivory/90 p-5">
-              <div className="mb-3 flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
-                <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                </svg>
+              <div className="flex items-start gap-4">
+                <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-full bg-gold/10">
+                  <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-sm font-semibold text-charcoal">
+                    3. Travel Documents
+                  </h3>
+                  <p className="mt-1 text-xs leading-relaxed text-charcoal/70">
+                    Once we receive your deposit, we'll send you detailed travel documents, pre-departure guide, and visa assistance information (if applicable).
+                  </p>
+                </div>
               </div>
-              <h3 className="text-sm font-semibold text-charcoal">
-                Documents
-              </h3>
-              <p className="mt-2 text-xs leading-relaxed text-charcoal/70">
-                Pre-departure guide and documents arriving soon
-              </p>
             </div>
           </div>
 

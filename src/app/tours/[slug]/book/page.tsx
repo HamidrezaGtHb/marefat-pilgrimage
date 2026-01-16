@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, FormEvent } from "react";
+import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 
@@ -26,6 +26,7 @@ const getTourData = (slug: string) => {
       destination: "Makkah & Madinah",
       duration: "10 days",
       basePrice: 3250,
+      flightIncluded: true,
       image: "/api/placeholder/400/300",
     },
     "karbala-najaf-retreat": {
@@ -33,6 +34,7 @@ const getTourData = (slug: string) => {
       destination: "Karbala & Najaf",
       duration: "7 days",
       basePrice: 1650,
+      flightIncluded: false,
       image: "/api/placeholder/400/300",
     },
     "mashhad-spiritual-weekend": {
@@ -40,15 +42,17 @@ const getTourData = (slug: string) => {
       destination: "Mashhad, Iran",
       duration: "4 days",
       basePrice: 890,
+      flightIncluded: false,
       image: "/api/placeholder/400/300",
     },
   };
-  
+
   return tours[slug] || {
     title: "Premium Pilgrimage Tour",
     destination: "Sacred Sites",
     duration: "Multiple days",
     basePrice: 2500,
+    flightIncluded: true,
     image: "/api/placeholder/400/300",
   };
 };
@@ -60,20 +64,38 @@ type Props = {
 export default function TourBookingPage({ params }: Props) {
   const router = useRouter();
   const tour = getTourData(params.slug);
-  
+  const formRef = useRef<HTMLDivElement>(null);
+
   const [step, setStep] = useState<Step>(1);
   const [numberOfTravelers, setNumberOfTravelers] = useState<number>(1);
-  const [travelDate, setTravelDate] = useState("");
-  const [travelers, setTravelers] = useState<TravelerInfo[]>([]);
-  
+  const [travelers, setTravelers] = useState<TravelerInfo[]>([
+    {
+      id: "traveler-1",
+      firstName: "",
+      lastName: "",
+      email: "",
+      phone: "",
+      passportNumber: "",
+      nationality: "",
+      passportExpiry: "",
+      dateOfBirth: "",
+    }
+  ]);
+
   const [addons, setAddons] = useState({
     insurance: false,
-    extraNights: 0,
-    privateTransfer: false,
+    flightBooking: false,
   });
-  
+
   const [paymentMethod, setPaymentMethod] = useState<"bank">("bank");
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Scroll to top when step changes
+  useEffect(() => {
+    if (formRef.current) {
+      formRef.current.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  }, [step]);
 
   // Initialize travelers array when number changes
   const handleTravelerCountChange = (count: number) => {
@@ -105,10 +127,7 @@ export default function TourBookingPage({ params }: Props) {
   // Validation
   const validateStep = (currentStep: Step): boolean => {
     if (currentStep === 1) {
-      return !!travelDate && numberOfTravelers > 0;
-    }
-    if (currentStep === 2) {
-      return travelers.every(t => 
+      return travelers.every(t =>
         t.firstName &&
         t.lastName &&
         t.email &&
@@ -150,9 +169,8 @@ export default function TourBookingPage({ params }: Props) {
   // Calculate totals
   const baseTotal = tour.basePrice * numberOfTravelers;
   const insuranceCost = addons.insurance ? 99 * numberOfTravelers : 0;
-  const extraNightsCost = addons.extraNights * 150 * numberOfTravelers;
-  const transferCost = addons.privateTransfer ? 75 * numberOfTravelers : 0;
-  const grandTotal = baseTotal + insuranceCost + extraNightsCost + transferCost;
+  const flightCost = addons.flightBooking ? 450 * numberOfTravelers : 0;
+  const grandTotal = baseTotal + insuranceCost + flightCost;
   const depositAmount = Math.floor(grandTotal * 0.3);
 
   return (
@@ -182,10 +200,10 @@ export default function TourBookingPage({ params }: Props) {
       <section className="mx-auto max-w-7xl px-6 py-12 sm:px-8 lg:px-12">
         <div className="grid gap-8 lg:grid-cols-[1fr_380px]">
           {/* Left: Form */}
-          <div className="space-y-6">
+          <div ref={formRef} className="space-y-6">
             {/* Progress Steps */}
             <div className="flex items-center justify-between rounded-2xl border border-charcoal/5 bg-ivory/90 p-6">
-              {["Date & Travelers", "Traveler Info", "Add-ons", "Payment"].map((label, idx) => {
+              {["Traveler Info", "Add-ons", "Payment", "Review"].map((label, idx) => {
                 const stepNum = (idx + 1) as Step;
                 const isActive = step === stepNum;
                 const isDone = step > stepNum;
@@ -215,56 +233,88 @@ export default function TourBookingPage({ params }: Props) {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* Step 1: Date & Number of Travelers */}
+              {/* Step 1: Traveler Information (Dynamic) */}
               {step === 1 && (
-                <div className="space-y-6 rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm">
-                  <h2 className="font-display text-lg font-semibold text-charcoal">
-                    Select Date & Number of Travelers
-                  </h2>
-                  
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-charcoal">
-                      Preferred Travel Date
-                    </label>
-                    <input
-                      type="date"
-                      value={travelDate}
-                      onChange={(e) => setTravelDate(e.target.value)}
-                      required
-                      className="w-full rounded-xl border border-charcoal/10 bg-ivory px-4 py-3 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-                    />
-                    <p className="mt-2 text-xs text-charcoal/60">
-                      Your advisor will confirm exact dates and availability.
-                    </p>
-                  </div>
-
-                  <div>
-                    <label className="mb-2 block text-sm font-medium text-charcoal">
-                      How many travelers?
-                    </label>
-                    <input
-                      type="number"
-                      min="1"
-                      max="10"
-                      value={numberOfTravelers}
-                      onChange={(e) => handleTravelerCountChange(parseInt(e.target.value) || 1)}
-                      required
-                      className="w-full rounded-xl border border-charcoal/10 bg-ivory px-4 py-3 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
-                    />
-                    <p className="mt-2 text-xs text-charcoal/60">
-                      Maximum 10 travelers per booking. For larger groups, please contact us.
-                    </p>
-                  </div>
-                </div>
-              )}
-
-              {/* Step 2: Traveler Information (Dynamic) */}
-              {step === 2 && (
                 <div className="space-y-6">
-                  <h2 className="font-display text-lg font-semibold text-charcoal">
-                    Traveler Information
-                  </h2>
-                  
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm">
+                    <h2 className="font-display text-lg font-semibold text-charcoal">
+                      Traveler Information
+                    </h2>
+                    <p className="mt-2 text-xs text-charcoal/60">
+                      Please provide details for all travelers
+                    </p>
+
+                    {/* Number of Travelers Selector */}
+                    <div className="mt-6 rounded-xl border border-charcoal/10 bg-ivory/50 p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <label className="text-sm font-medium text-charcoal">
+                            Number of Travelers
+                          </label>
+                          <p className="mt-0.5 text-xs text-charcoal/60">
+                            Add or remove travelers for this booking
+                          </p>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (numberOfTravelers > 1) {
+                                const newCount = numberOfTravelers - 1;
+                                setNumberOfTravelers(newCount);
+                                setTravelers(travelers.slice(0, newCount));
+                              }
+                            }}
+                            disabled={numberOfTravelers <= 1}
+                            className="flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/15 bg-ivory text-charcoal transition hover:bg-charcoal/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
+                            </svg>
+                          </button>
+                          <span className="w-12 text-center text-lg font-semibold text-charcoal">
+                            {numberOfTravelers}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              if (numberOfTravelers < 10) {
+                                const newCount = numberOfTravelers + 1;
+                                setNumberOfTravelers(newCount);
+                                setTravelers([
+                                  ...travelers,
+                                  {
+                                    id: `traveler-${newCount}`,
+                                    firstName: "",
+                                    lastName: "",
+                                    email: "",
+                                    phone: "",
+                                    passportNumber: "",
+                                    nationality: "",
+                                    passportExpiry: "",
+                                    dateOfBirth: "",
+                                  }
+                                ]);
+                              }
+                            }}
+                            disabled={numberOfTravelers >= 10}
+                            className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-charcoal transition hover:bg-gold-dark disabled:opacity-30 disabled:cursor-not-allowed"
+                          >
+                            <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                            </svg>
+                          </button>
+                        </div>
+                      </div>
+                      {numberOfTravelers >= 10 && (
+                        <p className="mt-2 text-xs text-charcoal/60">
+                          Maximum 10 travelers per booking. For larger groups, please <a href="/contact" className="text-gold-dark underline">contact us</a>.
+                        </p>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Traveler Forms */}
                   {travelers.map((traveler, index) => (
                     <div
                       key={traveler.id}
@@ -388,13 +438,13 @@ export default function TourBookingPage({ params }: Props) {
                 </div>
               )}
 
-              {/* Step 3: Add-ons */}
-              {step === 3 && (
+              {/* Step 2: Add-ons */}
+              {step === 2 && (
                 <div className="space-y-6 rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm">
                   <h2 className="font-display text-lg font-semibold text-charcoal">
                     Enhance Your Journey
                   </h2>
-                  
+
                   <div className="space-y-3">
                     <label className="flex items-start gap-3 rounded-xl border border-charcoal/7 bg-ivory/90 p-4 transition hover:border-charcoal/15 cursor-pointer">
                       <input
@@ -414,66 +464,317 @@ export default function TourBookingPage({ params }: Props) {
                       <span className="text-sm font-semibold text-charcoal">€99</span>
                     </label>
 
-                    <label className="flex items-start gap-3 rounded-xl border border-charcoal/7 bg-ivory/90 p-4 transition hover:border-charcoal/15 cursor-pointer">
+                    <label className={`flex items-start gap-3 rounded-xl border p-4 transition ${
+                      tour.flightIncluded
+                        ? "border-charcoal/7 bg-ivory/50 opacity-60 cursor-not-allowed"
+                        : "border-charcoal/7 bg-ivory/90 hover:border-charcoal/15 cursor-pointer"
+                    }`}>
                       <input
                         type="checkbox"
-                        checked={addons.privateTransfer}
-                        onChange={(e) => setAddons({ ...addons, privateTransfer: e.target.checked })}
-                        className="mt-0.5 h-4 w-4 rounded border-charcoal/30 text-charcoal transition focus:ring-2 focus:ring-gold/70"
+                        checked={tour.flightIncluded || addons.flightBooking}
+                        disabled={tour.flightIncluded}
+                        onChange={(e) => !tour.flightIncluded && setAddons({ ...addons, flightBooking: e.target.checked })}
+                        className="mt-0.5 h-4 w-4 rounded border-charcoal/30 text-charcoal transition focus:ring-2 focus:ring-gold/70 disabled:opacity-60"
                       />
                       <div className="flex-1">
                         <p className="text-sm font-medium text-charcoal">
-                          Private Airport Transfer
+                          Flight Booking {tour.flightIncluded && "(Included)"}
                         </p>
                         <p className="text-xs text-charcoal/60">
-                          Exclusive vehicle for airport pickup and drop-off • €75 per traveler
+                          {tour.flightIncluded
+                            ? "Round-trip flights are included in this package"
+                            : "Let us arrange your round-trip flights • €450 per traveler"
+                          }
                         </p>
                       </div>
-                      <span className="text-sm font-semibold text-charcoal">€75</span>
+                      {!tour.flightIncluded && (
+                        <span className="text-sm font-semibold text-charcoal">€450</span>
+                      )}
                     </label>
-
-                    <div className="rounded-xl border border-charcoal/7 bg-ivory/90 p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex-1">
-                          <p className="text-sm font-medium text-charcoal">
-                            Extra Hotel Nights
-                          </p>
-                          <p className="text-xs text-charcoal/60">
-                            Extend your stay before or after • €150 per night per traveler
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            onClick={() => setAddons({ ...addons, extraNights: Math.max(0, addons.extraNights - 1) })}
-                            className="flex h-8 w-8 items-center justify-center rounded-full border border-charcoal/15 bg-ivory text-charcoal transition hover:bg-charcoal/5"
-                          >
-                            −
-                          </button>
-                          <span className="w-8 text-center text-sm font-semibold text-charcoal">
-                            {addons.extraNights}
-                          </span>
-                          <button
-                            type="button"
-                            onClick={() => setAddons({ ...addons, extraNights: Math.min(7, addons.extraNights + 1) })}
-                            className="flex h-8 w-8 items-center justify-center rounded-full bg-gold text-charcoal transition hover:bg-gold-dark"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                    </div>
                   </div>
                 </div>
               )}
 
-              {/* Step 4: Payment Method */}
+              {/* Step 4: Review & Confirmation */}
               {step === 4 && (
+                <div className="space-y-6">
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm">
+                    <h2 className="font-display text-lg font-semibold text-charcoal">
+                      Review Your Booking
+                    </h2>
+                    <p className="mt-2 text-xs text-charcoal/60">
+                      Please review all details carefully before confirming your booking
+                    </p>
+                  </div>
+
+                  {/* Tour Details */}
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-5 shadow-sm">
+                    <h3 className="border-b border-charcoal/5 pb-3 text-sm font-semibold text-charcoal">
+                      Tour Details
+                    </h3>
+                    <div className="mt-4 space-y-2.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-charcoal/60">Tour Package</span>
+                        <span className="font-medium text-charcoal">{tour.title}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-charcoal/60">Destination</span>
+                        <span className="text-charcoal">{tour.destination}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-charcoal/60">Duration</span>
+                        <span className="text-charcoal">{tour.duration}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-charcoal/60">Number of Travelers</span>
+                        <span className="font-medium text-charcoal">{numberOfTravelers} {numberOfTravelers === 1 ? "person" : "people"}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Traveler Information */}
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-5 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-charcoal/5 pb-3">
+                      <h3 className="text-sm font-semibold text-charcoal">
+                        Traveler Information
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setStep(1)}
+                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    </div>
+                    <div className="mt-4 space-y-4">
+                      {travelers.map((traveler, index) => (
+                        <div key={traveler.id} className="rounded-xl bg-ivory/50 p-4 border border-charcoal/5">
+                          <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-charcoal/70">
+                            Traveler {index + 1}
+                          </p>
+                          <div className="grid gap-3 text-xs sm:grid-cols-2">
+                            <div>
+                              <p className="text-charcoal/60">Full Name</p>
+                              <p className="mt-0.5 font-medium text-charcoal">{traveler.firstName} {traveler.lastName}</p>
+                            </div>
+                            <div>
+                              <p className="text-charcoal/60">Date of Birth</p>
+                              <p className="mt-0.5 text-charcoal">
+                                {new Date(traveler.dateOfBirth).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-charcoal/60">Passport Number</p>
+                              <p className="mt-0.5 font-mono text-charcoal">{traveler.passportNumber}</p>
+                            </div>
+                            <div>
+                              <p className="text-charcoal/60">Nationality</p>
+                              <p className="mt-0.5 text-charcoal">{traveler.nationality}</p>
+                            </div>
+                            <div>
+                              <p className="text-charcoal/60">Passport Expiry</p>
+                              <p className="mt-0.5 text-charcoal">
+                                {new Date(traveler.passportExpiry).toLocaleDateString("en-GB", {
+                                  day: "2-digit",
+                                  month: "short",
+                                  year: "numeric",
+                                })}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-charcoal/60">Email</p>
+                              <p className="mt-0.5 text-charcoal">{traveler.email}</p>
+                            </div>
+                            <div className="sm:col-span-2">
+                              <p className="text-charcoal/60">Phone Number</p>
+                              <p className="mt-0.5 text-charcoal">{traveler.phone}</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Add-ons & Extras */}
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-5 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-charcoal/5 pb-3">
+                      <h3 className="text-sm font-semibold text-charcoal">
+                        Add-ons & Extras
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setStep(2)}
+                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    </div>
+                    <div className="mt-4 space-y-2.5 text-sm">
+                      {addons.insurance ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20">
+                              <svg className="h-3 w-3 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-charcoal">Travel Insurance</span>
+                          </div>
+                          <span className="font-medium text-charcoal">€{insuranceCost}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-charcoal/60">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span className="text-xs">No travel insurance selected</span>
+                        </div>
+                      )}
+
+                      {tour.flightIncluded ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20">
+                              <svg className="h-3 w-3 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-charcoal">Flight Booking (Included)</span>
+                          </div>
+                          <span className="text-xs text-charcoal/60">Included in package</span>
+                        </div>
+                      ) : addons.flightBooking ? (
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="flex h-5 w-5 items-center justify-center rounded-full bg-gold/20">
+                              <svg className="h-3 w-3 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                            <span className="text-charcoal">Flight Booking</span>
+                          </div>
+                          <span className="font-medium text-charcoal">€{flightCost}</span>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2 text-charcoal/60">
+                          <svg className="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                          </svg>
+                          <span className="text-xs">Flight booking not selected</span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Payment Method */}
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-5 shadow-sm">
+                    <div className="flex items-center justify-between border-b border-charcoal/5 pb-3">
+                      <h3 className="text-sm font-semibold text-charcoal">
+                        Payment Method
+                      </h3>
+                      <button
+                        type="button"
+                        onClick={() => setStep(3)}
+                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                        </svg>
+                        Edit
+                      </button>
+                    </div>
+                    <div className="mt-4 flex items-center gap-3">
+                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
+                        <svg className="h-5 w-5 text-gold-dark" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium text-charcoal">Bank Transfer</p>
+                        <p className="text-xs text-charcoal/60">Direct transfer to business account</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Price Summary */}
+                  <div className="rounded-2xl border border-gold/30 bg-gradient-to-br from-gold/5 to-gold-soft/10 p-5 shadow-sm">
+                    <h3 className="mb-4 text-sm font-semibold text-charcoal">
+                      Price Summary
+                    </h3>
+                    <div className="space-y-2.5 text-sm">
+                      <div className="flex justify-between">
+                        <span className="text-charcoal/70">Tour Package × {numberOfTravelers}</span>
+                        <span className="text-charcoal">€{baseTotal.toLocaleString()}</span>
+                      </div>
+                      {addons.insurance && (
+                        <div className="flex justify-between">
+                          <span className="text-charcoal/70">Travel Insurance</span>
+                          <span className="text-charcoal">€{insuranceCost.toLocaleString()}</span>
+                        </div>
+                      )}
+                      {addons.flightBooking && !tour.flightIncluded && (
+                        <div className="flex justify-between">
+                          <span className="text-charcoal/70">Flight Booking</span>
+                          <span className="text-charcoal">€{flightCost.toLocaleString()}</span>
+                        </div>
+                      )}
+                      <div className="border-t border-charcoal/10 pt-2.5">
+                        <div className="flex justify-between">
+                          <span className="font-semibold text-charcoal">Total Amount</span>
+                          <span className="text-lg font-bold text-charcoal">€{grandTotal.toLocaleString()}</span>
+                        </div>
+                        <div className="mt-2 flex justify-between text-xs">
+                          <span className="text-charcoal/70">Deposit Due Now (30%)</span>
+                          <span className="font-semibold text-gold-dark">€{depositAmount.toLocaleString()}</span>
+                        </div>
+                        <p className="mt-2 text-xs text-charcoal/60">
+                          Remaining balance of €{(grandTotal - depositAmount).toLocaleString()} due 30 days before departure
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Terms Acceptance */}
+                  <div className="rounded-2xl border border-charcoal/5 bg-ivory p-5 shadow-sm">
+                    <label className="flex items-start gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        required
+                        className="mt-0.5 h-4 w-4 rounded border-charcoal/30 text-charcoal transition focus:ring-2 focus:ring-gold/70"
+                      />
+                      <p className="text-xs leading-relaxed text-charcoal/70">
+                        I confirm that all the information provided above is accurate and complete. I have reviewed all details and agree to the{" "}
+                        <a href="/terms" target="_blank" className="font-medium text-charcoal underline hover:text-gold">
+                          Terms & Conditions
+                        </a>
+                        {" "}and{" "}
+                        <a href="/privacy" target="_blank" className="font-medium text-charcoal underline hover:text-gold">
+                          Privacy Policy
+                        </a>
+                        {" "}of Marefat Pilgrimage.
+                      </p>
+                    </label>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 3: Payment Method */}
+              {step === 3 && (
                 <div className="space-y-6 rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm">
                   <h2 className="font-display text-lg font-semibold text-charcoal">
                     Payment Method
                   </h2>
-                  
+
                   <div className="space-y-3">
                     <button
                       type="button"
@@ -487,10 +788,10 @@ export default function TourBookingPage({ params }: Props) {
                       />
                       <div className="flex-1 text-left">
                         <p className="text-sm font-medium text-charcoal">
-                          Credit / Debit Card
+                          Online Payment
                         </p>
                         <p className="text-xs text-charcoal/60">
-                          Secure payment via Stripe • Coming soon
+                          Credit/Debit card or PayPal • Coming soon
                         </p>
                       </div>
                     </button>
@@ -515,16 +816,56 @@ export default function TourBookingPage({ params }: Props) {
                           Bank Transfer
                         </p>
                         <p className="text-xs text-charcoal/60">
-                          Transfer to our business account • Invoice and details provided after confirmation
+                          Direct transfer to our business account
                         </p>
                       </div>
                     </button>
                   </div>
 
+                  {paymentMethod === "bank" && (
+                    <div className="relative rounded-xl border border-gold/30 bg-ivory/90 p-5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const bankDetails = `Bank: Deutsche Bank\nIBAN: DE89 3704 0044 0532 0130 00\nBIC: COBADEFFXXX\nReference: Your booking ID`;
+                          navigator.clipboard.writeText(bankDetails);
+                        }}
+                        className="absolute right-4 top-4 flex items-center gap-1.5 rounded-lg bg-charcoal/5 px-3 py-1.5 text-xs font-medium text-charcoal transition hover:bg-charcoal/10"
+                        title="Copy bank details"
+                      >
+                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copy
+                      </button>
+                      <p className="mb-3 text-xs font-semibold uppercase tracking-wide text-charcoal/70">
+                        Bank Details
+                      </p>
+                      <div className="space-y-2 text-sm text-charcoal">
+                        <div className="flex">
+                          <span className="w-24 font-medium">Bank:</span>
+                          <span>Deutsche Bank</span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 font-medium">IBAN:</span>
+                          <span className="font-mono">DE89 3704 0044 0532 0130 00</span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 font-medium">BIC:</span>
+                          <span className="font-mono">COBADEFFXXX</span>
+                        </div>
+                        <div className="flex">
+                          <span className="w-24 font-medium">Reference:</span>
+                          <span>Your booking ID</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <div className="rounded-xl bg-gold/10 p-4">
                     <p className="text-xs leading-relaxed text-charcoal/75">
-                      <strong className="font-semibold text-charcoal">Payment Terms:</strong> A 30% deposit 
-                      (€{depositAmount.toLocaleString()}) is due now to confirm your booking. The remaining balance 
+                      <strong className="font-semibold text-charcoal">Payment Terms:</strong> A 30% deposit
+                      (€{depositAmount.toLocaleString()}) is due now to confirm your booking. The remaining balance
                       is due 30 days before departure. Full payment details and invoice will be sent to your email.
                     </p>
                   </div>
@@ -590,15 +931,9 @@ export default function TourBookingPage({ params }: Props) {
                 <p className="mt-1 text-xs text-charcoal/60">
                   {tour.destination} • {tour.duration}
                 </p>
-                {travelDate && (
-                  <p className="mt-1 text-xs text-charcoal/60">
-                    Departure: {new Date(travelDate).toLocaleDateString("en-GB", {
-                      day: "2-digit",
-                      month: "short",
-                      year: "numeric",
-                    })}
-                  </p>
-                )}
+                <p className="mt-1 text-xs text-charcoal/60">
+                  {numberOfTravelers} {numberOfTravelers === 1 ? "Traveler" : "Travelers"}
+                </p>
               </div>
 
               <div className="space-y-3 border-t border-charcoal/5 pt-4">
@@ -620,22 +955,13 @@ export default function TourBookingPage({ params }: Props) {
                   </div>
                 )}
 
-                {addons.extraNights > 0 && (
+                {(tour.flightIncluded || addons.flightBooking) && (
                   <div className="flex justify-between text-sm">
                     <span className="text-charcoal/70">
-                      Extra Nights ({addons.extraNights})
+                      Flight Booking {tour.flightIncluded && "(Included)"}
                     </span>
                     <span className="font-medium text-charcoal">
-                      €{extraNightsCost}
-                    </span>
-                  </div>
-                )}
-
-                {addons.privateTransfer && (
-                  <div className="flex justify-between text-sm">
-                    <span className="text-charcoal/70">Private Transfer</span>
-                    <span className="font-medium text-charcoal">
-                      €{transferCost}
+                      {tour.flightIncluded ? "—" : `€${flightCost}`}
                     </span>
                   </div>
                 )}
