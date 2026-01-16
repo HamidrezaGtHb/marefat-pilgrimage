@@ -16,6 +16,12 @@ type TravelerInfo = {
   dateOfBirth: string;
 };
 
+type ValidationErrors = {
+  [travelerId: string]: {
+    [field: string]: string;
+  };
+};
+
 type Step = 1 | 2 | 3 | 4;
 
 // Tour data - in production, fetch from API/database
@@ -89,6 +95,8 @@ export default function TourBookingPage({ params }: Props) {
 
   const [paymentMethod, setPaymentMethod] = useState<"bank">("bank");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
+  const [emailSuggestion, setEmailSuggestion] = useState<{ [travelerId: string]: string }>({});
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -122,27 +130,213 @@ export default function TourBookingPage({ params }: Props) {
     const updated = [...travelers];
     updated[index] = { ...updated[index], [field]: value };
     setTravelers(updated);
+
+    // Clear error for this field when user types
+    const travelerId = travelers[index].id;
+    if (validationErrors[travelerId]?.[field]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[travelerId]) {
+          const { [field]: _, ...rest } = newErrors[travelerId];
+          if (Object.keys(rest).length === 0) {
+            delete newErrors[travelerId];
+          } else {
+            newErrors[travelerId] = rest;
+          }
+        }
+        return newErrors;
+      });
+    }
   };
 
-  // Validation
-  const validateStep = (currentStep: Step): boolean => {
-    if (currentStep === 1) {
-      return travelers.every(t =>
-        t.firstName &&
-        t.lastName &&
-        t.email &&
-        t.phone &&
-        t.passportNumber &&
-        t.nationality &&
-        t.passportExpiry &&
-        t.dateOfBirth
-      );
+  // Validation helper functions
+  const validateEmail = (email: string, travelerId: string): string | null => {
+    if (!email) return "Email is required";
+
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      // Check for common typos and suggest corrections
+      const commonDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com"];
+      const emailParts = email.split("@");
+      if (emailParts.length === 2) {
+        const [, domain] = emailParts;
+        const suggestion = commonDomains.find(d => {
+          // Simple similarity check
+          if (domain.length > 0 && d.startsWith(domain[0]) && Math.abs(domain.length - d.length) <= 2) {
+            return true;
+          }
+          return false;
+        });
+
+        if (suggestion && domain !== suggestion) {
+          setEmailSuggestion(prev => ({ ...prev, [travelerId]: `${emailParts[0]}@${suggestion}` }));
+        }
+      }
+      return "Please enter a valid email address";
     }
-    return true;
+
+    // Clear suggestion if email is valid
+    setEmailSuggestion(prev => {
+      const newSuggestions = { ...prev };
+      delete newSuggestions[travelerId];
+      return newSuggestions;
+    });
+
+    return null;
+  };
+
+  const validatePhone = (phone: string): string | null => {
+    if (!phone) return "Phone number is required";
+
+    // Remove spaces and common separators
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
+
+    // Check if it starts with + and has at least 10 digits
+    if (!cleanPhone.startsWith("+")) {
+      return "Phone must include country code (e.g., +49)";
+    }
+
+    // Check length (minimum 10 digits after +, maximum 15)
+    const digits = cleanPhone.slice(1);
+    if (digits.length < 10) {
+      return "Phone number is too short";
+    }
+    if (digits.length > 15) {
+      return "Phone number is too long";
+    }
+
+    // Check if all characters after + are digits
+    if (!/^\d+$/.test(digits)) {
+      return "Phone number can only contain digits after country code";
+    }
+
+    return null;
+  };
+
+  const validatePassportNumber = (passportNumber: string): string | null => {
+    if (!passportNumber) return "Passport number is required";
+
+    // Passport numbers are typically 6-9 characters, alphanumeric
+    const cleanPassport = passportNumber.trim().toUpperCase();
+
+    if (cleanPassport.length < 6) {
+      return "Passport number is too short (minimum 6 characters)";
+    }
+
+    if (cleanPassport.length > 9) {
+      return "Passport number is too long (maximum 9 characters)";
+    }
+
+    // Check if alphanumeric
+    if (!/^[A-Z0-9]+$/.test(cleanPassport)) {
+      return "Passport number can only contain letters and numbers";
+    }
+
+    return null;
+  };
+
+  const validatePassportExpiry = (expiryDate: string): string | null => {
+    if (!expiryDate) return "Passport expiry date is required";
+
+    const expiry = new Date(expiryDate);
+    const today = new Date();
+
+    // Check if passport is already expired
+    if (expiry < today) {
+      return "Passport has already expired";
+    }
+
+    // Get travel date (for this example, we'll use a fixed date or tour start date)
+    // In production, this would come from tour.departureDate or similar
+    // For now, we'll assume travel is 60 days from now as an example
+    const travelDate = new Date();
+    travelDate.setDate(travelDate.getDate() + 60);
+
+    // Check if passport expires within 6 months of travel
+    const sixMonthsAfterTravel = new Date(travelDate);
+    sixMonthsAfterTravel.setMonth(sixMonthsAfterTravel.getMonth() + 6);
+
+    if (expiry < sixMonthsAfterTravel) {
+      return "Passport must be valid for at least 6 months from travel date";
+    }
+
+    return null;
+  };
+
+  const validateField = (traveler: TravelerInfo, field: keyof TravelerInfo): string | null => {
+    switch (field) {
+      case "email":
+        return validateEmail(traveler.email, traveler.id);
+      case "phone":
+        return validatePhone(traveler.phone);
+      case "passportNumber":
+        return validatePassportNumber(traveler.passportNumber);
+      case "passportExpiry":
+        return validatePassportExpiry(traveler.passportExpiry);
+      case "firstName":
+      case "lastName":
+      case "nationality":
+      case "dateOfBirth":
+        return traveler[field] ? null : `${field.replace(/([A-Z])/g, " $1").trim()} is required`;
+      default:
+        return null;
+    }
+  };
+
+  const validateAllTravelers = (): boolean => {
+    const errors: ValidationErrors = {};
+    let hasErrors = false;
+
+    travelers.forEach((traveler) => {
+      const fields: (keyof TravelerInfo)[] = [
+        "firstName",
+        "lastName",
+        "email",
+        "phone",
+        "passportNumber",
+        "nationality",
+        "dateOfBirth",
+        "passportExpiry",
+      ];
+
+      fields.forEach((field) => {
+        const error = validateField(traveler, field);
+        if (error) {
+          if (!errors[traveler.id]) {
+            errors[traveler.id] = {};
+          }
+          errors[traveler.id][field] = error;
+          hasErrors = true;
+        }
+      });
+    });
+
+    setValidationErrors(errors);
+    return !hasErrors;
+  };
+
+  const scrollToFirstError = () => {
+    // Find the first traveler with errors
+    const firstErrorTravelerId = Object.keys(validationErrors)[0];
+    if (firstErrorTravelerId) {
+      // Find the element and scroll to it
+      const element = document.getElementById(`traveler-${firstErrorTravelerId}`);
+      if (element) {
+        element.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }
   };
 
   const handleNext = () => {
-    if (!validateStep(step)) return;
+    if (step === 1) {
+      // Validate all travelers
+      const isValid = validateAllTravelers();
+      if (!isValid) {
+        // Scroll to first error after a brief delay to ensure errors are rendered
+        setTimeout(() => scrollToFirstError(), 100);
+        return;
+      }
+    }
     setStep((s) => Math.min(4, s + 1) as Step);
   };
 
@@ -152,16 +346,15 @@ export default function TourBookingPage({ params }: Props) {
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
-    if (!validateStep(step)) return;
-    
+
     setIsSubmitting(true);
-    
+
     // Simulate API call
     await new Promise((resolve) => setTimeout(resolve, 1500));
-    
+
     // Generate booking reference
     const bookingRef = `MAR-${Math.random().toString(36).substring(2, 7).toUpperCase()}`;
-    
+
     // Redirect to success page with booking reference
     router.push(`/tours/${params.slug}/book/success?ref=${bookingRef}`);
   };
@@ -318,12 +511,13 @@ export default function TourBookingPage({ params }: Props) {
                   {travelers.map((traveler, index) => (
                     <div
                       key={traveler.id}
+                      id={`traveler-${traveler.id}`}
                       className="space-y-4 rounded-2xl border border-charcoal/5 bg-ivory p-6 shadow-sm"
                     >
                       <h3 className="text-sm font-semibold uppercase tracking-wide text-charcoal/70">
                         Traveler {index + 1}
                       </h3>
-                      
+
                       <div className="grid gap-4 sm:grid-cols-2">
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-charcoal">
@@ -333,9 +527,17 @@ export default function TourBookingPage({ params }: Props) {
                             type="text"
                             value={traveler.firstName}
                             onChange={(e) => updateTraveler(index, "firstName", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.firstName
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.firstName && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].firstName}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-charcoal">
@@ -345,9 +547,17 @@ export default function TourBookingPage({ params }: Props) {
                             type="text"
                             value={traveler.lastName}
                             onChange={(e) => updateTraveler(index, "lastName", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.lastName
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.lastName && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].lastName}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -360,9 +570,42 @@ export default function TourBookingPage({ params }: Props) {
                             type="email"
                             value={traveler.email}
                             onChange={(e) => updateTraveler(index, "email", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            onBlur={() => {
+                              const error = validateEmail(traveler.email, traveler.id);
+                              if (error) {
+                                setValidationErrors(prev => ({
+                                  ...prev,
+                                  [traveler.id]: { ...prev[traveler.id], email: error }
+                                }));
+                              }
+                            }}
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.email
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.email && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].email}
+                            </p>
+                          )}
+                          {emailSuggestion[traveler.id] && !validationErrors[traveler.id]?.email && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                updateTraveler(index, "email", emailSuggestion[traveler.id]);
+                                setEmailSuggestion(prev => {
+                                  const newSuggestions = { ...prev };
+                                  delete newSuggestions[traveler.id];
+                                  return newSuggestions;
+                                });
+                              }}
+                              className="mt-1.5 text-xs text-gold-dark hover:underline"
+                            >
+                              Did you mean {emailSuggestion[traveler.id]}?
+                            </button>
+                          )}
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-charcoal">
@@ -370,12 +613,30 @@ export default function TourBookingPage({ params }: Props) {
                           </label>
                           <input
                             type="tel"
+                            inputMode="tel"
                             value={traveler.phone}
                             onChange={(e) => updateTraveler(index, "phone", e.target.value)}
-                            required
+                            onBlur={() => {
+                              const error = validatePhone(traveler.phone);
+                              if (error) {
+                                setValidationErrors(prev => ({
+                                  ...prev,
+                                  [traveler.id]: { ...prev[traveler.id], phone: error }
+                                }));
+                              }
+                            }}
                             placeholder="+49 123 456 789"
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.phone
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.phone && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].phone}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -387,10 +648,28 @@ export default function TourBookingPage({ params }: Props) {
                           <input
                             type="text"
                             value={traveler.passportNumber}
-                            onChange={(e) => updateTraveler(index, "passportNumber", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            onChange={(e) => updateTraveler(index, "passportNumber", e.target.value.toUpperCase())}
+                            onBlur={() => {
+                              const error = validatePassportNumber(traveler.passportNumber);
+                              if (error) {
+                                setValidationErrors(prev => ({
+                                  ...prev,
+                                  [traveler.id]: { ...prev[traveler.id], passportNumber: error }
+                                }));
+                              }
+                            }}
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm font-mono text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.passportNumber
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
+                            maxLength={9}
                           />
+                          {validationErrors[traveler.id]?.passportNumber && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].passportNumber}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-charcoal">
@@ -400,9 +679,17 @@ export default function TourBookingPage({ params }: Props) {
                             type="text"
                             value={traveler.nationality}
                             onChange={(e) => updateTraveler(index, "nationality", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.nationality
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.nationality && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].nationality}
+                            </p>
+                          )}
                         </div>
                         <div>
                           <label className="mb-1.5 block text-xs font-medium text-charcoal">
@@ -412,9 +699,17 @@ export default function TourBookingPage({ params }: Props) {
                             type="date"
                             value={traveler.dateOfBirth}
                             onChange={(e) => updateTraveler(index, "dateOfBirth", e.target.value)}
-                            required
-                            className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                              validationErrors[traveler.id]?.dateOfBirth
+                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                            }`}
                           />
+                          {validationErrors[traveler.id]?.dateOfBirth && (
+                            <p className="mt-1.5 text-xs text-red-600">
+                              {validationErrors[traveler.id].dateOfBirth}
+                            </p>
+                          )}
                         </div>
                       </div>
 
@@ -426,12 +721,30 @@ export default function TourBookingPage({ params }: Props) {
                           type="date"
                           value={traveler.passportExpiry}
                           onChange={(e) => updateTraveler(index, "passportExpiry", e.target.value)}
-                          required
-                          className="w-full rounded-xl border border-charcoal/10 bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:border-gold focus:outline-none focus:ring-2 focus:ring-gold/20"
+                          onBlur={() => {
+                            const error = validatePassportExpiry(traveler.passportExpiry);
+                            if (error) {
+                              setValidationErrors(prev => ({
+                                ...prev,
+                                [traveler.id]: { ...prev[traveler.id], passportExpiry: error }
+                              }));
+                            }
+                          }}
+                          className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
+                            validationErrors[traveler.id]?.passportExpiry
+                              ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
+                              : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
+                          }`}
                         />
-                        <p className="mt-1.5 text-xs text-charcoal/60">
-                          Must be valid for at least 6 months from travel date
-                        </p>
+                        {validationErrors[traveler.id]?.passportExpiry ? (
+                          <p className="mt-1.5 text-xs text-red-600">
+                            {validationErrors[traveler.id].passportExpiry}
+                          </p>
+                        ) : (
+                          <p className="mt-1.5 text-xs text-charcoal/60">
+                            Must be valid for at least 6 months from travel date
+                          </p>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -892,12 +1205,11 @@ export default function TourBookingPage({ params }: Props) {
                   ← Back
                 </button>
 
-                {step < 4 ? (
+{step < 4 ? (
                   <button
                     type="button"
                     onClick={handleNext}
-                    disabled={!validateStep(step)}
-                    className="rounded-full bg-charcoal px-8 py-3 text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="rounded-full bg-charcoal px-8 py-3 text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
                   >
                     Continue
                   </button>
