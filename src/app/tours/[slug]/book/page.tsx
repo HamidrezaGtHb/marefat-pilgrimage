@@ -3,6 +3,17 @@
 import { useState, FormEvent, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import { FormField } from "@/components/forms/FormField";
+import { Button } from "@/components/ui/Button";
+import {
+  validateEmail,
+  validatePhone,
+  validatePassportNumber,
+  validatePassportExpiry,
+  validateRequired,
+  validateDate,
+  formatFieldName,
+} from "@/utils/validation";
 
 type TravelerInfo = {
   id: string;
@@ -96,7 +107,6 @@ export default function TourBookingPage({ params }: Props) {
   const [paymentMethod, setPaymentMethod] = useState<"bank">("bank");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({});
-  const [emailSuggestion, setEmailSuggestion] = useState<{ [travelerId: string]: string }>({});
 
   // Scroll to top when step changes
   useEffect(() => {
@@ -149,163 +159,30 @@ export default function TourBookingPage({ params }: Props) {
     }
   };
 
-  // Validation helper functions
-  const validateEmail = (email: string, travelerId: string): string | null => {
-    if (!email) return "Email is required";
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      // Check for common typos and suggest corrections
-      const commonDomains = ["gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "icloud.com"];
-      const emailParts = email.split("@");
-      if (emailParts.length === 2) {
-        const [, domain] = emailParts;
-        const suggestion = commonDomains.find(d => {
-          // Simple similarity check
-          if (domain.length > 0 && d.startsWith(domain[0]) && Math.abs(domain.length - d.length) <= 2) {
-            return true;
-          }
-          return false;
-        });
-
-        if (suggestion && domain !== suggestion) {
-          setEmailSuggestion(prev => ({ ...prev, [travelerId]: `${emailParts[0]}@${suggestion}` }));
-        }
-      }
-      return "Please enter a valid email address";
-    }
-
-    // Clear suggestion if email is valid
-    setEmailSuggestion(prev => {
-      const newSuggestions = { ...prev };
-      delete newSuggestions[travelerId];
-      return newSuggestions;
-    });
-
-    return null;
-  };
-
-  const validatePhone = (phone: string): string | null => {
-    if (!phone) return "Phone number is required";
-
-    // Remove spaces and common separators
-    const cleanPhone = phone.replace(/[\s\-\(\)]/g, "");
-
-    // Check if it starts with + and has at least 10 digits
-    if (!cleanPhone.startsWith("+")) {
-      return "Phone must include country code (e.g., +49)";
-    }
-
-    // Check length (minimum 10 digits after +, maximum 15)
-    const digits = cleanPhone.slice(1);
-    if (digits.length < 10) {
-      return "Phone number is too short";
-    }
-    if (digits.length > 15) {
-      return "Phone number is too long";
-    }
-
-    // Check if all characters after + are digits
-    if (!/^\d+$/.test(digits)) {
-      return "Phone number can only contain digits after country code";
-    }
-
-    return null;
-  };
-
-  const validatePassportNumber = (passportNumber: string): string | null => {
-    if (!passportNumber) return "Passport number is required";
-
-    // Passport numbers are typically 6-9 characters, alphanumeric
-    const cleanPassport = passportNumber.trim().toUpperCase();
-
-    if (cleanPassport.length < 6) {
-      return "Passport number is too short (minimum 6 characters)";
-    }
-
-    if (cleanPassport.length > 9) {
-      return "Passport number is too long (maximum 9 characters)";
-    }
-
-    // Check if alphanumeric
-    if (!/^[A-Z0-9]+$/.test(cleanPassport)) {
-      return "Passport number can only contain letters and numbers";
-    }
-
-    return null;
-  };
-
-  const validatePassportExpiry = (expiryDate: string): string | null => {
-    if (!expiryDate) return "Passport expiry date is required";
-
-    const expiry = new Date(expiryDate);
-    const today = new Date();
-
-    // Check if passport is already expired
-    if (expiry < today) {
-      return "Passport has already expired";
-    }
-
-    // Get travel date (for this example, we'll use a fixed date or tour start date)
-    // In production, this would come from tour.departureDate or similar
-    // For now, we'll assume travel is 60 days from now as an example
-    const travelDate = new Date();
-    travelDate.setDate(travelDate.getDate() + 60);
-
-    // Check if passport expires within 6 months of travel
-    const sixMonthsAfterTravel = new Date(travelDate);
-    sixMonthsAfterTravel.setMonth(sixMonthsAfterTravel.getMonth() + 6);
-
-    if (expiry < sixMonthsAfterTravel) {
-      return "Passport must be valid for at least 6 months from travel date";
-    }
-
-    return null;
-  };
-
-  const validateField = (traveler: TravelerInfo, field: keyof TravelerInfo): string | null => {
-    switch (field) {
-      case "email":
-        return validateEmail(traveler.email, traveler.id);
-      case "phone":
-        return validatePhone(traveler.phone);
-      case "passportNumber":
-        return validatePassportNumber(traveler.passportNumber);
-      case "passportExpiry":
-        return validatePassportExpiry(traveler.passportExpiry);
-      case "firstName":
-      case "lastName":
-      case "nationality":
-      case "dateOfBirth":
-        return traveler[field] ? null : `${field.replace(/([A-Z])/g, " $1").trim()} is required`;
-      default:
-        return null;
-    }
-  };
 
   const validateAllTravelers = (): boolean => {
     const errors: ValidationErrors = {};
     let hasErrors = false;
 
     travelers.forEach((traveler) => {
-      const fields: (keyof TravelerInfo)[] = [
-        "firstName",
-        "lastName",
-        "email",
-        "phone",
-        "passportNumber",
-        "nationality",
-        "dateOfBirth",
-        "passportExpiry",
+      const fieldValidations = [
+        { field: "firstName", validator: () => validateRequired(traveler.firstName, "First Name") },
+        { field: "lastName", validator: () => validateRequired(traveler.lastName, "Last Name") },
+        { field: "email", validator: () => validateEmail(traveler.email) },
+        { field: "phone", validator: () => validatePhone(traveler.phone) },
+        { field: "passportNumber", validator: () => validatePassportNumber(traveler.passportNumber) },
+        { field: "nationality", validator: () => validateRequired(traveler.nationality, "Nationality") },
+        { field: "dateOfBirth", validator: () => validateDate(traveler.dateOfBirth, "Date of Birth") },
+        { field: "passportExpiry", validator: () => validatePassportExpiry(traveler.passportExpiry) },
       ];
 
-      fields.forEach((field) => {
-        const error = validateField(traveler, field);
-        if (error) {
+      fieldValidations.forEach(({ field, validator }) => {
+        const result = validator();
+        if (!result.isValid && result.error) {
           if (!errors[traveler.id]) {
             errors[traveler.id] = {};
           }
-          errors[traveler.id][field] = error;
+          errors[traveler.id][field] = result.error;
           hasErrors = true;
         }
       });
@@ -449,8 +326,9 @@ export default function TourBookingPage({ params }: Props) {
                           </p>
                         </div>
                         <div className="flex items-center gap-3">
-                          <button
+                          <Button
                             type="button"
+                            variant="outline"
                             onClick={() => {
                               if (numberOfTravelers > 1) {
                                 const newCount = numberOfTravelers - 1;
@@ -459,17 +337,18 @@ export default function TourBookingPage({ params }: Props) {
                               }
                             }}
                             disabled={numberOfTravelers <= 1}
-                            className="flex h-10 w-10 items-center justify-center rounded-full border border-charcoal/15 bg-ivory text-charcoal transition hover:bg-charcoal/5 disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="!h-10 !w-10 !p-0"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 12H4" />
                             </svg>
-                          </button>
+                          </Button>
                           <span className="w-12 text-center text-lg font-semibold text-charcoal">
                             {numberOfTravelers}
                           </span>
-                          <button
+                          <Button
                             type="button"
+                            variant="secondary"
                             onClick={() => {
                               if (numberOfTravelers < 10) {
                                 const newCount = numberOfTravelers + 1;
@@ -491,12 +370,12 @@ export default function TourBookingPage({ params }: Props) {
                               }
                             }}
                             disabled={numberOfTravelers >= 10}
-                            className="flex h-10 w-10 items-center justify-center rounded-full bg-gold text-charcoal transition hover:bg-gold-dark disabled:opacity-30 disabled:cursor-not-allowed"
+                            className="!h-10 !w-10 !p-0"
                           >
                             <svg className="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                             </svg>
-                          </button>
+                          </Button>
                         </div>
                       </div>
                       {numberOfTravelers >= 10 && (
@@ -519,233 +398,80 @@ export default function TourBookingPage({ params }: Props) {
                       </h3>
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            First Name *
-                          </label>
-                          <input
-                            type="text"
-                            value={traveler.firstName}
-                            onChange={(e) => updateTraveler(index, "firstName", e.target.value)}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.firstName
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.firstName && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].firstName}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Last Name *
-                          </label>
-                          <input
-                            type="text"
-                            value={traveler.lastName}
-                            onChange={(e) => updateTraveler(index, "lastName", e.target.value)}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.lastName
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.lastName && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].lastName}
-                            </p>
-                          )}
-                        </div>
+                        <FormField
+                          label="First Name"
+                          fieldType="text"
+                          value={traveler.firstName}
+                          onChange={(e) => updateTraveler(index, "firstName", e.target.value)}
+                          error={validationErrors[traveler.id]?.firstName}
+                          required
+                        />
+                        <FormField
+                          label="Last Name"
+                          fieldType="text"
+                          value={traveler.lastName}
+                          onChange={(e) => updateTraveler(index, "lastName", e.target.value)}
+                          error={validationErrors[traveler.id]?.lastName}
+                          required
+                        />
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-2">
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Email *
-                          </label>
-                          <input
-                            type="email"
-                            value={traveler.email}
-                            onChange={(e) => updateTraveler(index, "email", e.target.value)}
-                            onBlur={() => {
-                              const error = validateEmail(traveler.email, traveler.id);
-                              if (error) {
-                                setValidationErrors(prev => ({
-                                  ...prev,
-                                  [traveler.id]: { ...prev[traveler.id], email: error }
-                                }));
-                              }
-                            }}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.email
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.email && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].email}
-                            </p>
-                          )}
-                          {emailSuggestion[traveler.id] && !validationErrors[traveler.id]?.email && (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                updateTraveler(index, "email", emailSuggestion[traveler.id]);
-                                setEmailSuggestion(prev => {
-                                  const newSuggestions = { ...prev };
-                                  delete newSuggestions[traveler.id];
-                                  return newSuggestions;
-                                });
-                              }}
-                              className="mt-1.5 text-xs text-gold-dark hover:underline"
-                            >
-                              Did you mean {emailSuggestion[traveler.id]}?
-                            </button>
-                          )}
-                        </div>
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Phone (with country code) *
-                          </label>
-                          <input
-                            type="tel"
-                            inputMode="tel"
-                            value={traveler.phone}
-                            onChange={(e) => updateTraveler(index, "phone", e.target.value)}
-                            onBlur={() => {
-                              const error = validatePhone(traveler.phone);
-                              if (error) {
-                                setValidationErrors(prev => ({
-                                  ...prev,
-                                  [traveler.id]: { ...prev[traveler.id], phone: error }
-                                }));
-                              }
-                            }}
-                            placeholder="+49 123 456 789"
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.phone
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.phone && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].phone}
-                            </p>
-                          )}
-                        </div>
+                        <FormField
+                          label="Email"
+                          fieldType="email"
+                          value={traveler.email}
+                          onChange={(e) => updateTraveler(index, "email", e.target.value)}
+                          error={validationErrors[traveler.id]?.email}
+                          required
+                        />
+                        <FormField
+                          label="Phone (with country code)"
+                          fieldType="tel"
+                          value={traveler.phone}
+                          onChange={(e) => updateTraveler(index, "phone", e.target.value)}
+                          error={validationErrors[traveler.id]?.phone}
+                          placeholder="+49 123 456 789"
+                          required
+                        />
                       </div>
 
                       <div className="grid gap-4 sm:grid-cols-3">
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Passport Number *
-                          </label>
-                          <input
-                            type="text"
-                            value={traveler.passportNumber}
-                            onChange={(e) => updateTraveler(index, "passportNumber", e.target.value.toUpperCase())}
-                            onBlur={() => {
-                              const error = validatePassportNumber(traveler.passportNumber);
-                              if (error) {
-                                setValidationErrors(prev => ({
-                                  ...prev,
-                                  [traveler.id]: { ...prev[traveler.id], passportNumber: error }
-                                }));
-                              }
-                            }}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm font-mono text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.passportNumber
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                            maxLength={9}
-                          />
-                          {validationErrors[traveler.id]?.passportNumber && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].passportNumber}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Nationality *
-                          </label>
-                          <input
-                            type="text"
-                            value={traveler.nationality}
-                            onChange={(e) => updateTraveler(index, "nationality", e.target.value)}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.nationality
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.nationality && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].nationality}
-                            </p>
-                          )}
-                        </div>
-                        <div>
-                          <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                            Date of Birth *
-                          </label>
-                          <input
-                            type="date"
-                            value={traveler.dateOfBirth}
-                            onChange={(e) => updateTraveler(index, "dateOfBirth", e.target.value)}
-                            className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                              validationErrors[traveler.id]?.dateOfBirth
-                                ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                                : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                            }`}
-                          />
-                          {validationErrors[traveler.id]?.dateOfBirth && (
-                            <p className="mt-1.5 text-xs text-red-600">
-                              {validationErrors[traveler.id].dateOfBirth}
-                            </p>
-                          )}
-                        </div>
+                        <FormField
+                          label="Passport Number"
+                          fieldType="passport"
+                          value={traveler.passportNumber}
+                          onChange={(e) => updateTraveler(index, "passportNumber", e.target.value)}
+                          error={validationErrors[traveler.id]?.passportNumber}
+                          required
+                        />
+                        <FormField
+                          label="Nationality"
+                          fieldType="text"
+                          value={traveler.nationality}
+                          onChange={(e) => updateTraveler(index, "nationality", e.target.value)}
+                          error={validationErrors[traveler.id]?.nationality}
+                          required
+                        />
+                        <FormField
+                          label="Date of Birth"
+                          fieldType="date"
+                          value={traveler.dateOfBirth}
+                          onChange={(e) => updateTraveler(index, "dateOfBirth", e.target.value)}
+                          error={validationErrors[traveler.id]?.dateOfBirth}
+                          required
+                        />
                       </div>
 
-                      <div>
-                        <label className="mb-1.5 block text-xs font-medium text-charcoal">
-                          Passport Expiry Date *
-                        </label>
-                        <input
-                          type="date"
-                          value={traveler.passportExpiry}
-                          onChange={(e) => updateTraveler(index, "passportExpiry", e.target.value)}
-                          onBlur={() => {
-                            const error = validatePassportExpiry(traveler.passportExpiry);
-                            if (error) {
-                              setValidationErrors(prev => ({
-                                ...prev,
-                                [traveler.id]: { ...prev[traveler.id], passportExpiry: error }
-                              }));
-                            }
-                          }}
-                          className={`w-full rounded-xl border bg-ivory px-3 py-2.5 text-sm text-charcoal transition focus:outline-none focus:ring-2 ${
-                            validationErrors[traveler.id]?.passportExpiry
-                              ? "border-red-500 focus:border-red-500 focus:ring-red-500/20"
-                              : "border-charcoal/10 focus:border-gold focus:ring-gold/20"
-                          }`}
-                        />
-                        {validationErrors[traveler.id]?.passportExpiry ? (
-                          <p className="mt-1.5 text-xs text-red-600">
-                            {validationErrors[traveler.id].passportExpiry}
-                          </p>
-                        ) : (
-                          <p className="mt-1.5 text-xs text-charcoal/60">
-                            Must be valid for at least 6 months from travel date
-                          </p>
-                        )}
-                      </div>
+                      <FormField
+                        label="Passport Expiry Date"
+                        fieldType="passportExpiry"
+                        value={traveler.passportExpiry}
+                        onChange={(e) => updateTraveler(index, "passportExpiry", e.target.value)}
+                        error={validationErrors[traveler.id]?.passportExpiry}
+                        helperText="Must be valid for at least 6 months from travel date"
+                        required
+                      />
                     </div>
                   ))}
                 </div>
@@ -851,16 +577,18 @@ export default function TourBookingPage({ params }: Props) {
                       <h3 className="text-sm font-semibold text-charcoal">
                         Traveler Information
                       </h3>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="xs"
                         onClick={() => setStep(1)}
-                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                        className="!px-3 !py-1.5"
                       >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Edit
-                      </button>
+                      </Button>
                     </div>
                     <div className="mt-4 space-y-4">
                       {travelers.map((traveler, index) => (
@@ -921,16 +649,18 @@ export default function TourBookingPage({ params }: Props) {
                       <h3 className="text-sm font-semibold text-charcoal">
                         Add-ons & Extras
                       </h3>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="xs"
                         onClick={() => setStep(2)}
-                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                        className="!px-3 !py-1.5"
                       >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Edit
-                      </button>
+                      </Button>
                     </div>
                     <div className="mt-4 space-y-2.5 text-sm">
                       {addons.insurance ? (
@@ -995,16 +725,18 @@ export default function TourBookingPage({ params }: Props) {
                       <h3 className="text-sm font-semibold text-charcoal">
                         Payment Method
                       </h3>
-                      <button
+                      <Button
                         type="button"
+                        variant="ghost"
+                        size="xs"
                         onClick={() => setStep(3)}
-                        className="flex items-center gap-1 rounded-lg px-3 py-1.5 text-xs font-medium text-charcoal/70 transition hover:bg-charcoal/5"
+                        className="!px-3 !py-1.5"
                       >
-                        <svg className="h-3.5 w-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="h-3.5 w-3.5 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                         </svg>
                         Edit
-                      </button>
+                      </Button>
                     </div>
                     <div className="mt-4 flex items-center gap-3">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gold/10">
@@ -1196,31 +928,35 @@ export default function TourBookingPage({ params }: Props) {
 
               {/* Navigation */}
               <div className="flex items-center justify-between pt-4">
-                <button
+                <Button
                   type="button"
+                  variant="ghost"
                   onClick={handleBack}
                   disabled={step === 1}
-                  className="text-sm font-medium text-charcoal/70 transition hover:text-charcoal disabled:opacity-30 disabled:cursor-not-allowed"
+                  size="sm"
                 >
                   ← Back
-                </button>
+                </Button>
 
-{step < 4 ? (
-                  <button
+                {step < 4 ? (
+                  <Button
                     type="button"
+                    variant="primary"
                     onClick={handleNext}
-                    className="rounded-full bg-charcoal px-8 py-3 text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
+                    size="lg"
                   >
                     Continue
-                  </button>
+                  </Button>
                 ) : (
-                  <button
+                  <Button
                     type="submit"
+                    variant="secondary"
                     disabled={isSubmitting}
-                    className="rounded-full bg-gold px-8 py-3 text-sm font-semibold text-charcoal shadow-soft transition hover:bg-gold-dark disabled:cursor-wait disabled:opacity-70"
+                    isLoading={isSubmitting}
+                    size="lg"
                   >
-                    {isSubmitting ? "Processing..." : "Confirm Booking"}
-                  </button>
+                    Confirm Booking
+                  </Button>
                 )}
               </div>
             </form>

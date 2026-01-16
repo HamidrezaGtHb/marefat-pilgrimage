@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, useEffect, useRef } from "react";
+import { FloatingWhatsApp } from "@/components/ui/FloatingWhatsApp";
 import "./globals.css";
 
 const navItems: { href: string; label: string }[] = [
@@ -85,15 +86,9 @@ function HeaderContent() {
         <div className="flex items-center gap-3">
           <a
             href="/booking"
-            className="hidden rounded-full bg-charcoal px-4 py-2 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 md:inline-flex"
+            className="hidden rounded-full bg-charcoal px-5 py-2.5 text-xs font-medium text-ivory shadow-soft transition hover:bg-charcoal/90 md:inline-flex"
           >
             Book Consultation
-          </a>
-          <a
-            href="https://wa.me/0000000000"
-            className="hidden items-center justify-center rounded-full border border-charcoal/15 bg-ivory/90 px-3 py-2 text-[11px] font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold/80 sm:inline-flex md:px-3.5"
-          >
-            WhatsApp
           </a>
 
           {/* Mobile menu button */}
@@ -138,12 +133,6 @@ function HeaderContent() {
                 >
                   Book Consultation
                 </a>
-                <a
-                  href="https://wa.me/0000000000"
-                  className="mt-2 flex w-full items-center justify-center rounded-full border border-charcoal/15 bg-ivory/90 px-4 py-2.5 text-sm font-medium text-charcoal shadow-sm shadow-charcoal/5 transition hover:border-gold/80"
-                >
-                  WhatsApp
-                </a>
               </div>
             </div>
           </nav>
@@ -175,6 +164,15 @@ export default function RootLayout({
           <HeaderContent />
 
           <main className="flex-1">{children}</main>
+
+          {/* Floating WhatsApp Button */}
+          <FloatingWhatsApp
+            phoneNumber="4901234567890"
+            message="Hello! I'm interested in learning more about your pilgrimage tours."
+            position="right"
+            showTooltip={true}
+            tooltipText="Need help? Chat with us!"
+          />
 
           <footer className="border-t border-charcoal/5 bg-ivory/80">
             <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-10 text-xs text-charcoal/60 sm:px-8 sm:text-[13px] lg:px-12">
