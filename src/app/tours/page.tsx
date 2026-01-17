@@ -1,7 +1,7 @@
-/* All Tours listing with advanced filters (UI + placeholder data) */
+/* All Tours listing with advanced filters - fetches from database */
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import Link from "next/link";
 import { PackageBadge } from "@/components/ui/PackageBadge";
 
@@ -31,121 +31,39 @@ type Tour = {
   };
 };
 
-const TOURS: Tour[] = [
-  {
-    slug: "signature-ramadan-umrah",
-    title: "Signature Ramadan Umrah",
-    destination: "Makkah & Madinah",
-    region: "Makkah/Madinah",
-    type: "Umrah",
-    startDate: "2026-03-15",
-    endDate: "2026-03-25",
-    durationDays: 10,
-    priceFrom: 3250,
-    hotelStars: 5,
-    flightIncluded: true,
-    meals: "Breakfast & Dinner",
-    transfer: true,
-    spiritualGuide: true,
-    packageLevel: "Premium",
-    popularityScore: 95,
-  },
-  {
-    slug: "executive-hajj-program",
-    title: "Executive Hajj Program",
-    destination: "Makkah, Mina, Arafat",
-    region: "Makkah/Madinah",
-    type: "Hajj",
-    startDate: "2026-06-01",
-    endDate: "2026-06-19",
-    durationDays: 18,
-    priceFrom: 0,
-    hotelStars: 5,
-    flightIncluded: true,
-    meals: "Full Board",
-    transfer: true,
-    spiritualGuide: true,
-    packageLevel: "Premium",
-    popularityScore: 99,
-  },
-  {
-    slug: "karbala-najaf-retreat",
-    title: "Karbala & Najaf Retreat",
-    destination: "Karbala & Najaf",
-    region: "Iraq",
-    type: "Ziyarat",
-    startDate: "2026-02-10",
-    endDate: "2026-02-17",
-    durationDays: 7,
-    priceFrom: 1650,
-    hotelStars: 4,
-    flightIncluded: false,
-    meals: "Breakfast only",
-    transfer: true,
-    spiritualGuide: true,
-    packageLevel: "Economy",
-    popularityScore: 80,
-    earlyBirdDiscount: {
-      discountedPrice: 999,
-      originalPrice: 1599,
-      deadline: "2026-02-10",
-    },
-  },
-  {
-    slug: "mashhad-spiritual-weekend",
-    title: "Mashhad Spiritual Weekend",
-    destination: "Mashhad",
-    region: "Iran",
-    type: "Ziyarat",
-    startDate: "2026-01-20",
-    endDate: "2026-01-24",
-    durationDays: 4,
-    priceFrom: 890,
-    hotelStars: 4,
-    flightIncluded: true,
-    meals: "Breakfast only",
-    transfer: true,
-    spiritualGuide: false,
-    packageLevel: "Economy",
-    popularityScore: 70,
-  },
-  {
-    slug: "umrah-iraq-combination",
-    title: "Umrah & Iraq Ziyarat Combination",
-    destination: "Makkah, Madinah, Karbala & Najaf",
-    region: "Multi",
-    type: "Combo",
-    startDate: "2026-04-05",
-    endDate: "2026-04-19",
-    durationDays: 14,
-    priceFrom: 4150,
-    hotelStars: 4,
-    flightIncluded: true,
-    meals: "Breakfast & Dinner",
-    transfer: true,
-    spiritualGuide: true,
-    packageLevel: "Premium",
-    popularityScore: 92,
-  },
-  {
-    slug: "off-peak-private-umrah",
-    title: "Off‑Peak Private Style Umrah",
-    destination: "Makkah & Madinah",
-    region: "Makkah/Madinah",
-    type: "Umrah",
-    startDate: "2026-11-10",
-    endDate: "2026-11-18",
-    durationDays: 8,
-    priceFrom: 2850,
-    hotelStars: 5,
-    flightIncluded: false,
-    meals: "Breakfast & Dinner",
-    transfer: true,
-    spiritualGuide: true,
-    packageLevel: "Premium",
-    popularityScore: 88,
-  },
-];
+// Helper function to determine region from destination
+function getRegion(destination: string, category: string): Tour["region"] {
+  const dest = destination.toLowerCase();
+  if (dest.includes("makkah") || dest.includes("madinah") || dest.includes("saudi")) {
+    return "Makkah/Madinah";
+  }
+  if (dest.includes("iraq") || dest.includes("karbala") || dest.includes("najaf")) {
+    return "Iraq";
+  }
+  if (dest.includes("iran") || dest.includes("mashhad") || dest.includes("qom")) {
+    return "Iran";
+  }
+  if (category === "COMBINED" || dest.includes(",")) {
+    return "Multi";
+  }
+  return "Makkah/Madinah";
+}
+
+// Helper function to map category to type
+function mapCategoryToType(category: string): TourType {
+  switch (category) {
+    case "UMRAH":
+      return "Umrah";
+    case "HAJJ":
+      return "Hajj";
+    case "ZIYARAT":
+      return "Ziyarat";
+    case "COMBINED":
+      return "Combo";
+    default:
+      return "Umrah";
+  }
+}
 
 type Sorting =
   | "price-asc"
@@ -153,6 +71,9 @@ type Sorting =
   | "duration";
 
 export default function ToursPage() {
+  const [tours, setTours] = useState<Tour[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [destination, setDestination] = useState<string>("all");
   const [tourType, setTourType] = useState<string>("all");
   const [dateFrom, setDateFrom] = useState("");
@@ -167,8 +88,60 @@ export default function ToursPage() {
   const [sorting, setSorting] = useState<Sorting>("date-soonest");
   const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
 
+  // Fetch tours from API
+  useEffect(() => {
+    async function fetchTours() {
+      try {
+        setLoading(true);
+        const response = await fetch("/api/tours");
+        const data = await response.json();
+
+        if (!data.success) {
+          throw new Error(data.error || "Failed to fetch tours");
+        }
+
+        // Transform API data to match Tour type
+        const transformedTours: Tour[] = data.tours.map((tour: any) => ({
+          slug: tour.slug,
+          title: tour.title,
+          destination: tour.destination,
+          region: getRegion(tour.destination, tour.category),
+          type: mapCategoryToType(tour.category),
+          startDate: tour.startDate,
+          endDate: tour.endDate,
+          durationDays: tour.durationDays,
+          priceFrom: parseFloat(tour.basePrice),
+          hotelStars: tour.hotelStars || 4,
+          flightIncluded: tour.flightIncluded,
+          meals: tour.mealsIncluded || "Breakfast only",
+          transfer: true, // Default to true
+          spiritualGuide: true, // Default to true
+          packageLevel: tour.basePrice > 3000 ? "Premium" : "Economy",
+          popularityScore: 80, // Default score
+          ...(tour.earlyBirdEnabled && tour.earlyBirdDeadline && tour.earlyBirdDiscountAmount ? {
+            earlyBirdDiscount: {
+              discountedPrice: parseFloat(tour.basePrice) - parseFloat(tour.earlyBirdDiscountAmount),
+              originalPrice: parseFloat(tour.basePrice),
+              deadline: tour.earlyBirdDeadline,
+            },
+          } : {}),
+        }));
+
+        setTours(transformedTours);
+        setError(null);
+      } catch (err) {
+        console.error("Error fetching tours:", err);
+        setError(err instanceof Error ? err.message : "Failed to load tours");
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchTours();
+  }, []);
+
   const filteredTours = useMemo(() => {
-    let result = [...TOURS];
+    let result = [...tours];
 
     if (destination !== "all") {
       result = result.filter((t) => t.region === destination);
@@ -229,6 +202,7 @@ export default function ToursPage() {
 
     return result;
   }, [
+    tours,
     dateFrom,
     dateTo,
     destination,
@@ -569,7 +543,33 @@ export default function ToursPage() {
               </div>
             </div>
 
-            <div className="grid gap-6 lg:grid-cols-2">
+            {/* Loading State */}
+            {loading && (
+              <div className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-charcoal/20 border-t-gold"></div>
+                  <p className="mt-4 text-sm text-charcoal/60">Loading tours...</p>
+                </div>
+              </div>
+            )}
+
+            {/* Error State */}
+            {error && !loading && (
+              <div className="rounded-2xl border border-red-200 bg-red-50 p-6 text-sm text-red-800">
+                <p className="font-medium">Failed to load tours</p>
+                <p className="mt-1 text-xs">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
+                  className="mt-3 rounded-lg bg-red-100 px-4 py-2 text-xs font-medium text-red-900 hover:bg-red-200"
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
+            {/* Tours Grid */}
+            {!loading && !error && (
+              <div className="grid gap-6 lg:grid-cols-2">
               {filteredTours.map((tour) => (
                 <Link
                   key={tour.slug}
@@ -668,7 +668,8 @@ export default function ToursPage() {
                   for a tailored proposal.
                 </div>
               )}
-            </div>
+              </div>
+            )}
           </section>
         </div>
       </section>

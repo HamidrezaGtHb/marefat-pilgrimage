@@ -1,52 +1,6 @@
-const featuredTours = [
-  {
-    slug: "signature-ramadan-umrah",
-    title: "Signature Ramadan Umrah",
-    destination: "Makkah & Madinah",
-    type: "Umrah",
-    startDate: "2026-03-15",
-    endDate: "2026-03-25",
-    durationDays: 10,
-    priceFrom: 3250,
-    hotelStars: 5,
-    flightIncluded: true,
-    meals: "Breakfast & Dinner",
-    packageLevel: "Premium",
-  },
-  {
-    slug: "executive-hajj-program",
-    title: "Executive Hajj Program",
-    destination: "Makkah, Mina, Arafat",
-    type: "Hajj",
-    startDate: "2026-06-01",
-    endDate: "2026-06-19",
-    durationDays: 18,
-    priceFrom: 0,
-    hotelStars: 5,
-    flightIncluded: true,
-    meals: "Full Board",
-    packageLevel: "Premium",
-  },
-  {
-    slug: "karbala-najaf-retreat",
-    title: "Karbala & Najaf Retreat",
-    destination: "Karbala & Najaf",
-    type: "Ziyarat",
-    startDate: "2026-02-10",
-    endDate: "2026-02-17",
-    durationDays: 7,
-    priceFrom: 1650,
-    hotelStars: 4,
-    flightIncluded: false,
-    meals: "Breakfast only",
-    packageLevel: "Economy",
-    earlyBirdDiscount: {
-      discountedPrice: 1450,
-      originalPrice: 1650,
-      deadline: "2026-01-25",
-    },
-  },
-];
+"use client";
+
+import { useEffect, useState } from "react";
 
 const testimonials = [
   {
@@ -87,7 +41,72 @@ const faqsPreview = [
   },
 ];
 
+interface FeaturedTour {
+  slug: string;
+  title: string;
+  destination: string;
+  type: string;
+  startDate: string;
+  endDate: string;
+  durationDays: number;
+  priceFrom: number;
+  hotelStars: number;
+  flightIncluded: boolean;
+  meals: string;
+  packageLevel: string;
+  earlyBirdDiscount?: {
+    discountedPrice: number;
+    originalPrice: number;
+    deadline: string;
+  };
+}
+
 export default function HomePage() {
+  const [featuredTours, setFeaturedTours] = useState<FeaturedTour[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFeaturedTours() {
+      try {
+        const response = await fetch("/api/tours?featured=true");
+        const data = await response.json();
+
+        if (data.success && data.tours) {
+          // Transform API data to match the featured tour format
+          const transformedTours: FeaturedTour[] = data.tours.map((tour: any) => ({
+            slug: tour.slug,
+            title: tour.title,
+            destination: tour.destination,
+            type: tour.category === "UMRAH" ? "Umrah" : tour.category === "HAJJ" ? "Hajj" : tour.category === "ZIYARAT" ? "Ziyarat" : "Combined",
+            startDate: tour.startDate,
+            endDate: tour.endDate,
+            durationDays: tour.durationDays,
+            priceFrom: parseFloat(tour.basePrice),
+            hotelStars: tour.hotelStars || 4,
+            flightIncluded: tour.flightIncluded,
+            meals: tour.mealsIncluded || "Breakfast only",
+            packageLevel: parseFloat(tour.basePrice) > 3000 ? "Premium" : "Economy",
+            ...(tour.earlyBirdEnabled && tour.earlyBirdDeadline && tour.earlyBirdDiscountAmount ? {
+              earlyBirdDiscount: {
+                discountedPrice: parseFloat(tour.basePrice) - parseFloat(tour.earlyBirdDiscountAmount),
+                originalPrice: parseFloat(tour.basePrice),
+                deadline: tour.earlyBirdDeadline,
+              },
+            } : {}),
+          }));
+
+          setFeaturedTours(transformedTours);
+        }
+      } catch (error) {
+        console.error("Error fetching featured tours:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    }
+
+    fetchFeaturedTours();
+  }, []);
+
   return (
     <main className="min-h-screen">
       {/* Hero */}
@@ -135,7 +154,7 @@ export default function HomePage() {
               View Tours
             </a>
             <a
-              href="/booking"
+              href="/consultation"
               className="inline-flex items-center justify-center rounded-full border border-charcoal/15 bg-ivory/70 px-7 py-3 text-sm font-medium text-charcoal shadow-sm shadow-charcoal/5 backdrop-blur-sm transition hover:border-gold hover:text-charcoal focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold/70 focus-visible:ring-offset-2 focus-visible:ring-offset-ivory"
             >
               Book Consultation
@@ -195,7 +214,37 @@ export default function HomePage() {
             </a>
           </div>
           <div className="mt-8 grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-            {featuredTours.map((tour) => (
+            {isLoading ? (
+              // Loading skeleton
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="flex flex-col gap-4 rounded-2xl border border-charcoal/5 bg-ivory/90 p-5 shadow-sm shadow-charcoal/5"
+                  >
+                    <div className="h-40 w-full animate-pulse rounded-xl bg-charcoal/10" />
+                    <div className="space-y-3">
+                      <div className="h-4 w-2/3 animate-pulse rounded bg-charcoal/10" />
+                      <div className="h-3 w-1/2 animate-pulse rounded bg-charcoal/10" />
+                      <div className="h-3 w-full animate-pulse rounded bg-charcoal/10" />
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : featuredTours.length === 0 ? (
+              // No featured tours
+              <div className="col-span-full flex flex-col items-center justify-center rounded-2xl border border-charcoal/5 bg-ivory/90 p-12 text-center">
+                <p className="text-charcoal/60">No featured tours available at the moment.</p>
+                <a
+                  href="/tours"
+                  className="mt-4 text-sm font-medium text-charcoal/80 underline-offset-4 hover:underline"
+                >
+                  View all tours
+                </a>
+              </div>
+            ) : (
+              // Featured tours
+              featuredTours.map((tour) => (
               <a
                 key={tour.slug}
                 href={`/tours/${tour.slug}`}
@@ -293,7 +342,8 @@ export default function HomePage() {
                   </div>
                 </div>
               </a>
-            ))}
+              ))
+            )}
           </div>
         </div>
       </section>
@@ -382,10 +432,10 @@ export default function HomePage() {
             </div>
             <div className="mt-5 space-y-3 text-sm">
               <a
-                href="/booking"
+                href="/consultation"
                 className="inline-flex w-full items-center justify-center rounded-full bg-charcoal px-6 py-3 text-sm font-medium text-ivory shadow-soft transition hover:bg-charcoal/90"
               >
-                Start online booking
+                Book a Consultation
               </a>
               <a
                 href="https://wa.me/0000000000"

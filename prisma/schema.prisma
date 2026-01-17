@@ -1,0 +1,323 @@
+// Prisma Schema for Marefat Pilgrimage
+// Database: PostgreSQL
+// ORM: Prisma
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// User Management (Admin Users)
+// ============================================
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  name         String?
+  role         Role     @default(ADMIN)
+  passwordHash String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+}
+
+// ============================================
+// Customer Management
+// ============================================
+
+model Customer {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  phone     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  bookings  Booking[]
+  travelers Traveler[]
+
+  @@map("customers")
+}
+
+// ============================================
+// Booking Management
+// ============================================
+
+model Booking {
+  id         String   @id @default(cuid())
+  bookingRef String   @unique // MAR-XXXXX
+
+  // Tour information (from Sanity.io)
+  tourSlug  String
+  tourTitle String
+
+  // Customer relationship
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Booking details
+  numberOfTravelers Int
+  travelDate        DateTime?
+
+  // Add-ons
+  hasInsurance     Boolean @default(false)
+  hasFlightBooking Boolean @default(false)
+
+  // Pricing (in EUR)
+  basePrice     Decimal
+  insuranceCost Decimal @default(0)
+  flightCost    Decimal @default(0)
+  totalAmount   Decimal
+  depositAmount Decimal
+
+  // Payment tracking
+  paymentMethod PaymentMethod @default(BANK_TRANSFER)
+  paymentStatus PaymentStatus @default(PENDING)
+  depositPaid   Boolean       @default(false)
+  depositPaidAt DateTime?
+  fullPaid      Boolean       @default(false)
+  fullPaidAt    DateTime?
+
+  // Booking status
+  status BookingStatus @default(PENDING)
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  travelers Traveler[]
+  payments  Payment[]
+
+  @@map("bookings")
+}
+
+enum PaymentMethod {
+  BANK_TRANSFER
+  ONLINE_PAYMENT
+}
+
+enum PaymentStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+}
+
+enum BookingStatus {
+  PENDING      // Waiting for deposit
+  DEPOSIT_PAID // Deposit received
+  CONFIRMED    // Fully paid
+  CANCELLED    // Cancelled by customer
+  COMPLETED    // Trip completed
+}
+
+// ============================================
+// Traveler Information
+// ============================================
+
+model Traveler {
+  id String @id @default(cuid())
+
+  // Personal information
+  firstName   String
+  lastName    String
+  email       String
+  phone       String
+  dateOfBirth DateTime
+  nationality String
+
+  // Passport information
+  passportNumber String
+  passportExpiry DateTime
+
+  // Relations
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  customerId String
+  customer   Customer @relation(fields: [customerId], references: [id])
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("travelers")
+}
+
+// ============================================
+// Payment Tracking
+// ============================================
+
+model Payment {
+  id String @id @default(cuid())
+
+  // Booking relationship
+  bookingId String
+  booking   Booking @relation(fields: [bookingId], references: [id])
+
+  // Payment details
+  amount        Decimal
+  paymentType   PaymentType   // DEPOSIT or FULL
+  paymentMethod PaymentMethod
+
+  // Bank transfer details
+  transferRef  String?
+  transferDate DateTime?
+
+  // Verification
+  status     PaymentStatus @default(PENDING)
+  verifiedAt DateTime?
+  verifiedBy String? // Admin user ID
+
+  // Additional notes
+  notes String?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("payments")
+}
+
+enum PaymentType {
+  DEPOSIT
+  FULL
+}
+
+// ============================================
+// Tour Management
+// ============================================
+
+model Tour {
+  id String @id @default(cuid())
+
+  // Basic information
+  title       String
+  slug        String        @unique
+  destination String
+  description String        @db.Text
+  category    TourCategory  @default(UMRAH)
+
+  // Pricing
+  basePrice Decimal
+  currency  String  @default("EUR")
+
+  // Duration
+  durationDays  Int
+  durationNights Int
+
+  // Dates
+  startDate DateTime
+  endDate   DateTime
+
+  // Availability
+  totalSeats     Int
+  availableSeats Int
+  isActive       Boolean @default(true)
+  isFeatured     Boolean @default(false) // Show on homepage (max 3)
+
+  // Images (stored as JSON array of URLs)
+  images String @db.Text // JSON string array
+
+  // Highlights (stored as JSON array)
+  highlights String @db.Text // JSON string array
+
+  // Itinerary (stored as JSON)
+  itinerary String @db.Text // JSON string
+
+  // Package details
+  hotelStars      Int?
+  mealsIncluded   String?
+  flightIncluded  Boolean @default(false)
+  visaIncluded    Boolean @default(false)
+  insuranceOption Boolean @default(true)
+
+  // Early bird discount
+  earlyBirdEnabled        Boolean  @default(false)
+  earlyBirdDeadline       DateTime?
+  earlyBirdDiscountAmount Decimal?
+
+  // SEO
+  metaTitle       String?
+  metaDescription String?
+
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("tours")
+}
+
+enum TourCategory {
+  UMRAH
+  HAJJ
+  ZIYARAT
+  COMBINED
+}
+
+// ============================================
+// Consultation Booking Management
+// ============================================
+
+model Consultation {
+  id String @id @default(cuid())
+
+  // Customer information
+  fullName        String
+  email           String
+  phone           String
+  preferredLanguage String @default("English") // English, Farsi, Arabic, German
+
+  // Consultation details
+  consultationType ConsultationType @default(TOUR_INQUIRY)
+  tourInterest     String? // Tour slug if interested in specific tour
+  preferredDate    DateTime
+  preferredTime    String // e.g., "10:00 AM", "2:00 PM"
+  timezone         String @default("Europe/Berlin")
+
+  // Additional information
+  message          String? @db.Text
+  numberOfTravelers Int? // If planning group travel
+
+  // Status tracking
+  status           ConsultationStatus @default(PENDING)
+  scheduledAt      DateTime? // Confirmed consultation date/time
+  completedAt      DateTime?
+  notes            String? @db.Text // Admin notes
+
+  // Calendar integration
+  calendarEventId  String? // Google Calendar event ID if integrated
+
+  // Metadata
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@map("consultations")
+}
+
+enum ConsultationType {
+  TOUR_INQUIRY      // General tour inquiry
+  CUSTOM_PACKAGE    // Request for custom package
+  GROUP_BOOKING     // Group booking inquiry
+  PAYMENT_QUESTION  // Payment related
+  GENERAL           // General consultation
+}
+
+enum ConsultationStatus {
+  PENDING     // Waiting to be scheduled
+  SCHEDULED   // Scheduled with customer
+  COMPLETED   // Consultation completed
+  CANCELLED   // Cancelled by customer or admin
+  NO_SHOW     // Customer didn't show up
+}
